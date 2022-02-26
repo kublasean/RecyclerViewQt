@@ -9,7 +9,7 @@
 #include <QSlider>
 #include <QPushButton>
 #include <QScrollBar>
-
+#include <QDockWidget>
 #include <QStandardItemModel>
 
 MainWindow::MainWindow(QWidget *parent)
@@ -27,19 +27,18 @@ MainWindow::MainWindow(QWidget *parent)
         model->appendRow(item);
     }
 
+    QDockWidget *widget = new QDockWidget();
+    QPushButton *topButton = new QPushButton();
+    widget->setWidget(topButton);
+
+    addDockWidget(Qt::DockWidgetArea::LeftDockWidgetArea, widget);
+
+
     RecyclerView *recycler = new RecyclerView(new ChannelSliderAdapter(model));
+    setCentralWidget(recycler);
 
-
-    ui->verticalLayout->insertWidget(1, recycler);
-
-    connect(ui->pushButton_2, &QPushButton::pressed, [recycler]() {
-        int min = recycler->verticalScrollBar()->minimum();
-        recycler->verticalScrollBar()->setValue(min);
-    });
-
-    connect(ui->pushButton, &QPushButton::pressed, [recycler]() {
-        int max = recycler->verticalScrollBar()->maximum();
-        recycler->verticalScrollBar()->setValue(max);
+    connect(topButton, &QPushButton::pressed, this, [recycler]() {
+        recycler->verticalScrollBar()->setValue(0);
     });
 }
 

@@ -20,6 +20,12 @@ void RecyclerViewAdapter::bindViewHolder(ViewHolder *vh, int dataPos)
 {
     Q_ASSERT(vh != nullptr);
 
+    if (dataPos % 2 == 0) {
+        vh->getItemView()->setBackgroundRole(QPalette::Base);
+    } else {
+        vh->getItemView()->setBackgroundRole(QPalette::AlternateBase);
+    }
+
     onBindViewHolder(vh, dataPos);
     activeViewMap.insert(dataPos, vh);
 }

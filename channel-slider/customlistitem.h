@@ -1,13 +1,15 @@
 #ifndef CUSTOMLISTITEM_H
 #define CUSTOMLISTITEM_H
 
+#include "recycler/styledrecyclerlistitem.h"
+
 #include <QWidget>
 
 namespace Ui {
 class CustomListItem;
 }
 
-class CustomListItem : public QWidget
+class CustomListItem : public StyledRecyclerListItem
 {
     Q_OBJECT
 

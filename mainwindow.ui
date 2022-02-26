@@ -14,22 +14,7 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout">
-    <item>
-     <widget class="QPushButton" name="pushButton_2">
-      <property name="text">
-       <string>TOP</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QPushButton" name="pushButton">
-      <property name="text">
-       <string>BOTTOM</string>
-      </property>
-     </widget>
-    </item>
-   </layout>
+   <layout class="QVBoxLayout" name="verticalLayout"/>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
@@ -37,7 +22,7 @@
      <x>0</x>
      <y>0</y>
      <width>659</width>
-     <height>25</height>
+     <height>26</height>
     </rect>
    </property>
   </widget>

@@ -29,7 +29,7 @@ private:
     RecyclerViewPool pool;
     RecyclerViewAdapter *adapter;
 
-    const int numExtraActive = 3;
+    const int numExtraActive = 0;
     int itemHeight;
 };
 

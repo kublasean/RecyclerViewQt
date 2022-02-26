@@ -4,7 +4,7 @@
 #include <QSlider>
 
 CustomListItem::CustomListItem(QWidget *parent) :
-    QWidget(parent),
+    StyledRecyclerListItem(parent),
     ui(new Ui::CustomListItem)
 {
     ui->setupUi(this);

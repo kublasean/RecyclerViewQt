@@ -20,8 +20,8 @@ RecyclerView::RecyclerView(RecyclerViewAdapter *adapter, int itemHeight, QWidget
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
 
     verticalScrollBar()->setSingleStep(itemHeight / 4);
-    verticalScrollBar()->setRange(0, totalItemHeight() - viewport()->height());
-    verticalScrollBar()->setPageStep(viewport()->height());
+    //verticalScrollBar()->setRange(0, totalItemHeight() - viewport()->height());
+    //verticalScrollBar()->setPageStep(viewport()->height());
     pool.maxSize = viewport()->height() / itemHeight + numExtraActive;
 
     //qDebug() << "POOL MAX" << pool.maxSize;
@@ -84,7 +84,7 @@ void RecyclerView::populateItemsBelow(int startDataPos)
 void RecyclerView::populateItemsAbove(int startDataPos)
 {
     int top = viewport()->rect().top();
-    if (getItemPos(startDataPos) < top || startDataPos < 0)
+    if (getItemPos(startDataPos) + itemHeight < top || startDataPos < 0)
         return;
 
     for (int i=startDataPos, numExtra=0; i>=0; i--) {
@@ -114,6 +114,17 @@ void RecyclerView::resizeEvent(QResizeEvent *event)
     if (adapter->activeViewMap.isEmpty()) {
         int startDataPos = verticalScrollBar()->value() / itemHeight;
         populateItemsBelow(startDataPos);
+
+        // Adjust our minWidth to that of an item if this is the first item we have created
+        if (!adapter->activeViewMap.isEmpty()) {
+            QWidget *widget = adapter->activeViewMap.first()->getItemView();
+            if (widget->minimumSizeHint().isValid()) {
+                setMinimumWidth(widget->minimumSizeHint().width() + verticalScrollBar()->sizeHint().width());
+            } else {
+                setMinimumWidth(widget->minimumWidth() + verticalScrollBar()->sizeHint().width());
+            }
+        }
+
     }
     else if (adapter->activeViewMap.last()->getItemView()->rect().bottom() < viewport()->rect().bottom()) {
         populateItemsBelow(adapter->activeViewMap.lastKey() + 1);
@@ -138,45 +149,25 @@ void RecyclerView::scrollContentsBy(int dx, int dy)
         return;
     }
 
-    QList<int> removeList;
+    viewport()->scroll(dx, dy);
 
-    int numExtraAbove = 0, numExtraBelow = 0;
-    for (auto it=adapter->activeViewMap.begin(); it!=adapter->activeViewMap.end(); it++) {
-        QWidget *widget = it.value()->getItemView();
-
-        widget->move(viewport()->x(), getItemPos(it.key()));
-
-        if (widget->y() + widget->height() < viewport()->y()) {
-            numExtraAbove++;
-        }
-
-        if (widget->y() > viewport()->rect().bottom()) {
-            if (numExtraBelow >= numExtraActive)
-                removeList << it.key();
-            numExtraBelow++;
+    // Recycle views out of sight
+    for (auto it=adapter->activeViewMap.begin(); it!=adapter->activeViewMap.end();) {
+        if (!viewport()->rect().intersects(it.value()->getItemView()->geometry())) {
+            //qDebug() << "ERASE " << it.key();
+            pool.putRecycledView(adapter->recycleViewHolder(it.value()));
+            it = adapter->activeViewMap.erase(it);
+        } else {
+            it++;
         }
     }
 
-    //qDebug() << "extra above: " << numExtraAbove;
-    for (int i=0; i<numExtraAbove - numExtraActive; i++) {
-        removeList << (adapter->activeViewMap.begin() + i).key();
-    }
+    if (adapter->activeViewMap.isEmpty())
+        return;
 
-    if (!removeList.isEmpty()) {
-        for (int i=0; i<removeList.size(); i++) {
-            int index = removeList[i];
-            qDebug() << "recycle at dataPos: " << index;
-        }
-    }
 
-    // Recycle widgets out of sight
-    for (int i=0; i<removeList.size(); i++) {
-        ViewHolder *vh = adapter->activeViewMap.take(removeList[i]);
-        pool.putRecycledView(adapter->recycleViewHolder(vh));
-    }
-
-    // Add items to top/bottom if nec.
     if (adapter->activeViewMap.first()->getItemView()->y() > viewport()->rect().top()) {
+        //qDebug() << "POP ABOVE " << adapter->activeViewMap.firstKey() - 1;
         populateItemsAbove(adapter->activeViewMap.firstKey() - 1);
     }
     else if (adapter->activeViewMap.last()->getItemView()->rect().bottom() < viewport()->rect().bottom()) {
