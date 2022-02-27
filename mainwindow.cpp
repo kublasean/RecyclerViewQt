@@ -20,7 +20,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     QStandardItemModel *model = new QStandardItemModel(this);
 
-    for (int i=0; i<512; i++) {
+    for (int i=0; i<5; i++) {
         QStandardItem *item = new QStandardItem(QString::number(i+1));
         item->setData("Channel " + QString::number(i+1), Qt::ToolTipRole);
         item->setData(0, Qt::UserRole);

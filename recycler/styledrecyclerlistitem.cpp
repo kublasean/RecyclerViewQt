@@ -36,6 +36,6 @@ void StyledRecyclerListItem::paintEvent(QPaintEvent *event)
     QPainter p(this);
     style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
 
-    //qDebug() << "ITEM PAINT EVENT" << event->rect();
+    qDebug() << "ITEM PAINT EVENT" << event->rect();
     //p.fillRect(event->rect(), Qt::red);
 }

@@ -4,12 +4,13 @@
 #include <QScrollBar>
 
 RecyclerView::RecyclerView(RecyclerViewAdapter *adapter, int itemHeight, QWidget *parent) :
-    QAbstractScrollArea(parent)
+    QAbstractItemView(parent)
 {
     Q_ASSERT(adapter != nullptr);
 
     this->adapter = adapter;
     this->adapter->setParent(this);
+    setModel(this->adapter->model());
 
     if (itemHeight <= 0) {
         itemHeight = 100;
@@ -19,15 +20,50 @@ RecyclerView::RecyclerView(RecyclerViewAdapter *adapter, int itemHeight, QWidget
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
 
+    setItemDelegate(nullptr);
+
     verticalScrollBar()->setSingleStep(itemHeight / 4);
-    //verticalScrollBar()->setRange(0, totalItemHeight() - viewport()->height());
-    //verticalScrollBar()->setPageStep(viewport()->height());
     pool.maxSize = viewport()->height() / itemHeight + numExtraActive;
-
-    //qDebug() << "POOL MAX" << pool.maxSize;
-
-    //qDebug() << "NUM ROWS: " << adapter->model()->rowCount();
 }
+
+QModelIndex RecyclerView::indexAt(const QPoint &point) const
+{
+    //return QModelIndex();
+    int row = (point.y() - viewport()->rect().top() + verticalScrollBar()->value()) / itemHeight;
+    if (!model()->hasIndex(row, 0))
+        return QModelIndex();
+
+    qDebug() << "indexAt" << point.y() << "is" << row;
+    return model()->index(row, 0);
+}
+
+void RecyclerView::scrollTo(const QModelIndex &index, QAbstractItemView::ScrollHint hint)
+{
+    int yPos;
+
+    switch (hint) {
+    case ScrollHint::EnsureVisible:
+    case ScrollHint::PositionAtTop:
+        yPos = 0;
+        break;
+    case ScrollHint::PositionAtCenter:
+        yPos = viewport()->height() / 2;
+        break;
+    case ScrollHint::PositionAtBottom:
+        yPos = viewport()->height() - itemHeight;
+        break;
+    }
+
+    verticalScrollBar()->setValue(viewport()->rect().top() - yPos + itemHeight * index.row());
+}
+
+QRect RecyclerView::visualRect(const QModelIndex &index) const
+{
+    qDebug() << "VISUAL RECT" << index.row();
+    //return QRect();
+    return QRect(0, getItemPos(index.row()), width(), itemHeight);
+}
+
 
 int RecyclerView::totalItemHeight() const
 {
@@ -36,8 +72,6 @@ int RecyclerView::totalItemHeight() const
 
 int RecyclerView::getItemPos(int dataPos) const
 {
-    //int ret = viewport()->rect().top() - verticalScrollBar()->value() + itemHeight * dataPos;
-    //qDebug() << "Get item pos " << dataPos << " ret: " << ret << " itemHeight: " << itemHeight << " top: " << viewport()->rect().top();
     return viewport()->rect().top() - verticalScrollBar()->value() + itemHeight * dataPos;
 }
 
@@ -66,8 +100,6 @@ void RecyclerView::populateItemsBelow(int startDataPos)
 
     if (getItemPos(startDataPos) > bottom || startDataPos < 0)
         return;
-
-    //qDebug() << "NUM ROWS: " << adapter->model()->rowCount() << "i: " << startDataPos;
 
     for (int i=startDataPos, numExtra=0; i<adapter->model()->rowCount(); i++) {
         int newY = getItemPos(i);
@@ -100,12 +132,14 @@ void RecyclerView::populateItemsAbove(int startDataPos)
     }
 }
 
+//
+// Re-implemented protected functions
+//
 void RecyclerView::resizeEvent(QResizeEvent *event)
 {
     verticalScrollBar()->setPageStep(viewport()->height());
     verticalScrollBar()->setRange(0, totalItemHeight() - viewport()->height());
     pool.maxSize = viewport()->height() / itemHeight + numExtraActive;
-    //qDebug() << "POOL MAX" << pool.maxSize;
 
     for (auto it=adapter->activeViewMap.begin(); it!=adapter->activeViewMap.end(); it++) {
         it.value()->getItemView()->resize(viewport()->width(), itemHeight);
@@ -137,7 +171,6 @@ void RecyclerView::scrollContentsBy(int dx, int dy)
 
     // Special case for when we "jump" positions in the scrollbar
     if (qAbs(dy) > adapter->activeViewMap.size() * itemHeight) {
-        qDebug() << "JUMP";
 
         // Recycle everything
         for (auto it=adapter->activeViewMap.begin(); it!=adapter->activeViewMap.end(); it++)
@@ -174,3 +207,28 @@ void RecyclerView::scrollContentsBy(int dx, int dy)
         populateItemsBelow(adapter->activeViewMap.lastKey() + 1);
     }
 }
+
+int RecyclerView::verticalOffset() const
+{
+    return verticalScrollBar()->value();
+}
+
+// TODO
+QModelIndex RecyclerView::moveCursor(QAbstractItemView::CursorAction cursorAction, Qt::KeyboardModifiers modifiers)
+{
+    return QModelIndex();
+}
+
+// TODO
+void RecyclerView::setSelection(const QRect &rect, QItemSelectionModel::SelectionFlags flags)
+{
+
+}
+
+// TODO
+QRegion	RecyclerView::visualRegionForSelection(const QItemSelection &selection) const
+{
+    return QRegion();
+}
+
+
