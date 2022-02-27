@@ -23,7 +23,7 @@ RecyclerView::RecyclerView(RecyclerViewAdapter *adapter, int itemHeight, QWidget
     setItemDelegate(nullptr);
 
     verticalScrollBar()->setSingleStep(itemHeight / 4);
-    pool.maxSize = viewport()->height() / itemHeight + numExtraActive;
+    pool.maxSize = viewport()->height() / itemHeight + numExtraActive;    
 }
 
 QModelIndex RecyclerView::indexAt(const QPoint &point) const
@@ -43,6 +43,12 @@ void RecyclerView::scrollTo(const QModelIndex &index, QAbstractItemView::ScrollH
 
     switch (hint) {
     case ScrollHint::EnsureVisible:
+        if (getItemPos(index.row()) < 0 || getItemPos(index.row()) > viewport()->rect().bottom()) {
+            yPos = 0;
+        } else {
+            return;
+        }
+        break;
     case ScrollHint::PositionAtTop:
         yPos = 0;
         break;
@@ -83,6 +89,16 @@ ViewHolder *RecyclerView::populateItem(int dataPos, int y)
 
     QWidget *view = vh->getItemView();
     view->setParent(viewport());
+
+    if (selectionModel()->isRowSelected(dataPos)) {
+        vh->getItemView()->setBackgroundRole(QPalette::Highlight);
+    }
+    else if (dataPos % 2 == 0) {
+        vh->getItemView()->setBackgroundRole(QPalette::Base);
+    } else {
+        vh->getItemView()->setBackgroundRole(QPalette::AlternateBase);
+    }
+
     adapter->bindViewHolder(vh, dataPos);
 
     view->resize(viewport()->width(), itemHeight);
@@ -222,13 +238,55 @@ QModelIndex RecyclerView::moveCursor(QAbstractItemView::CursorAction cursorActio
 // TODO
 void RecyclerView::setSelection(const QRect &rect, QItemSelectionModel::SelectionFlags flags)
 {
+    Q_ASSERT(selectionModel() != nullptr);
 
+    QModelIndex topLeft = indexAt(rect.topLeft());
+    QModelIndex bottomRight = indexAt(rect.bottomRight());
+
+    if (topLeft.isValid() && bottomRight.isValid()) {
+        qDebug() << "SELECTING";
+        selectionModel()->select(QItemSelection(topLeft, bottomRight), flags);
+    } else {
+        qDebug() << "SELECTION INVALID" << rect;
+        selectionModel()->select(QModelIndex(), flags);
+    }
 }
 
 // TODO
 QRegion	RecyclerView::visualRegionForSelection(const QItemSelection &selection) const
 {
+    /*QRegion region;
+    for (auto it=selection.begin(); it!=selection.end(); it++) {
+        QRect sectionRect(0, getItemPos(it->top()), width(), getItemPos(it->bottom()) + itemHeight);
+        region = region.united(sectionRect);
+    }
+    return region;*/
     return QRegion();
 }
+
+void RecyclerView::selectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
+{
+    QList<QModelIndex> list = selected.indexes();
+    for (auto it=list.begin(); it!=list.end(); it++) {
+        ViewHolder *vh = adapter->findViewHolder(it->row());
+        if (vh == nullptr)
+            continue;
+        vh->getItemView()->setBackgroundRole(QPalette::Highlight);
+    }
+
+    list = deselected.indexes();
+    for (auto it=list.begin(); it!=list.end(); it++) {
+        ViewHolder *vh = adapter->findViewHolder(it->row());
+        if (vh == nullptr)
+            continue;
+
+        if (vh->dataPos % 2 == 0) {
+            vh->getItemView()->setBackgroundRole(QPalette::Base);
+        } else {
+            vh->getItemView()->setBackgroundRole(QPalette::AlternateBase);
+        }
+    }
+}
+
 
 

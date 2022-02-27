@@ -27,7 +27,10 @@ protected:
     QModelIndex moveCursor(QAbstractItemView::CursorAction cursorAction, Qt::KeyboardModifiers modifiers) override;
     void setSelection(const QRect &rect, QItemSelectionModel::SelectionFlags flags) override;
     QRegion	visualRegionForSelection(const QItemSelection &selection) const override;
-    bool edit(const QModelIndex &index, QAbstractItemView::EditTrigger trigger, QEvent *event) { return false; }
+    bool edit(const QModelIndex &index, QAbstractItemView::EditTrigger trigger, QEvent *event) override { return false; }
+
+private slots:
+    void selectionChanged(const QItemSelection &selected, const QItemSelection &deselected) override;
 
 private:
     ViewHolder *populateItem(int dataPos, int y);

@@ -1,8 +1,7 @@
 #ifndef STYLEDRECYCLERLISTITEM_H
 #define STYLEDRECYCLERLISTITEM_H
 
-#include <QWidget>
-#include <QColor>
+#include <QFrame>
 
 class StyledRecyclerListItem : public QWidget
 {
@@ -12,8 +11,8 @@ public:
 
 protected:
     void paintEvent(QPaintEvent *) override;
-    void enterEvent(QEvent *event) override;
-    void leaveEvent(QEvent *event) override;
+    //void enterEvent(QEvent *event) override;
+    //void leaveEvent(QEvent *event) override;
 
 private:
     QColor previousColor;

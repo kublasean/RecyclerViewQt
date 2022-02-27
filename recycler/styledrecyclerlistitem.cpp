@@ -9,12 +9,18 @@ StyledRecyclerListItem::StyledRecyclerListItem(QWidget *parent)
     : QWidget{parent}
 {
     setAutoFillBackground(true);
+
+    QPalette pal = palette();
+    pal.setColor(QPalette::Highlight, QColor("#cce4f7"));
+    pal.setColor(QPalette::HighlightedText, pal.color(QPalette::Foreground));
+    setPalette(pal);
 }
 
+/*
 void StyledRecyclerListItem::enterEvent(QEvent *event)
 {
     QWidget::enterEvent(event);
-
+    setFrameShape(QFrame::Box);
     QPalette pal = palette();
     previousColor = pal.color(backgroundRole());
     pal.setColor(backgroundRole(), previousColor.darker(110));
@@ -24,10 +30,13 @@ void StyledRecyclerListItem::enterEvent(QEvent *event)
 void StyledRecyclerListItem::leaveEvent(QEvent *event)
 {
     QWidget::leaveEvent(event);
+    setFrameShape(QFrame::NoFrame);
     QPalette pal = palette();
     pal.setColor(backgroundRole(), previousColor);
     setPalette(pal);
-}
+
+
+}*/
 
 void StyledRecyclerListItem::paintEvent(QPaintEvent *event)
 {
@@ -36,6 +45,7 @@ void StyledRecyclerListItem::paintEvent(QPaintEvent *event)
     QPainter p(this);
     style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
 
-    qDebug() << "ITEM PAINT EVENT" << event->rect();
+    //qDebug() << "ITEM PAINT EVENT" << event->rect();
     //p.fillRect(event->rect(), Qt::red);
 }
+
