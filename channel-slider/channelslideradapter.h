@@ -4,6 +4,8 @@
 #include "recycler/recyclerviewadapter.h"
 
 #include <QObject>
+#include <QVector>
+#include <QItemSelectionModel>
 
 class ChannelSliderAdapter : public RecyclerViewAdapter
 {
@@ -15,10 +17,15 @@ public:
     void onBindViewHolder(ViewHolder *vh, int dataPos) override;
     void onRecycleViewHolder(ViewHolder *vh) const override;
 
+    void setSelectionModel(QItemSelectionModel *selectionModel);
+
 private slots:
     void newUserChannelValue(int dataPos, int val);
 
     void onDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles);
+
+private:
+    QPointer<QItemSelectionModel> selectionModel;
 };
 
 #endif // CHANNELSLIDERADAPTER_H

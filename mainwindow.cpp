@@ -33,8 +33,10 @@ MainWindow::MainWindow(QWidget *parent)
 
     addDockWidget(Qt::DockWidgetArea::LeftDockWidgetArea, widget);
 
+    ChannelSliderAdapter *adapter = new ChannelSliderAdapter(model);
+    RecyclerView *recycler = new RecyclerView(adapter);
+    adapter->setSelectionModel(recycler->selectionModel());
 
-    RecyclerView *recycler = new RecyclerView(new ChannelSliderAdapter(model));
     setCentralWidget(recycler);
 
     connect(topButton, &QPushButton::pressed, this, [recycler]() {

@@ -90,13 +90,12 @@ ViewHolder *RecyclerView::populateItem(int dataPos, int y)
     QWidget *view = vh->getItemView();
     view->setParent(viewport());
 
-    if (selectionModel()->isRowSelected(dataPos)) {
-        vh->getItemView()->setBackgroundRole(QPalette::Highlight);
-    }
-    else if (dataPos % 2 == 0) {
-        vh->getItemView()->setBackgroundRole(QPalette::Base);
+    vh->onSelectionChanged(selectionModel()->isRowSelected(dataPos));
+
+    if (dataPos % 2 == 0) {
+        view->setBackgroundRole(QPalette::Base);
     } else {
-        vh->getItemView()->setBackgroundRole(QPalette::AlternateBase);
+        view->setBackgroundRole(QPalette::AlternateBase);
     }
 
     adapter->bindViewHolder(vh, dataPos);
@@ -271,7 +270,7 @@ void RecyclerView::selectionChanged(const QItemSelection &selected, const QItemS
         ViewHolder *vh = adapter->findViewHolder(it->row());
         if (vh == nullptr)
             continue;
-        vh->getItemView()->setBackgroundRole(QPalette::Highlight);
+        vh->onSelectionChanged(true);
     }
 
     list = deselected.indexes();
@@ -280,13 +279,8 @@ void RecyclerView::selectionChanged(const QItemSelection &selected, const QItemS
         if (vh == nullptr)
             continue;
 
-        if (vh->dataPos % 2 == 0) {
-            vh->getItemView()->setBackgroundRole(QPalette::Base);
-        } else {
-            vh->getItemView()->setBackgroundRole(QPalette::AlternateBase);
-        }
+        vh->onSelectionChanged(false);
     }
 }
-
 
 

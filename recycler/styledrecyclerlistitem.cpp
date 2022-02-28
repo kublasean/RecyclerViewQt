@@ -9,43 +9,71 @@ StyledRecyclerListItem::StyledRecyclerListItem(QWidget *parent)
     : QWidget{parent}
 {
     setAutoFillBackground(true);
-
-    QPalette pal = palette();
-    pal.setColor(QPalette::Highlight, QColor("#cce4f7"));
-    pal.setColor(QPalette::HighlightedText, pal.color(QPalette::Foreground));
-    setPalette(pal);
+    isSelected = false;
+    //QPalette pal = palette();
+    //pal.setColor(QPalette::Highlight, QColor("#cce4f7"));
+    //pal.setColor(QPalette::HighlightedText, pal.color(QPalette::Foreground));
+    //setPalette(pal);
 }
 
-/*
+void StyledRecyclerListItem::setSelected(bool selected)
+{
+    isSelected = selected;
+    update(selectionPaintRect());
+}
+
+QRect StyledRecyclerListItem::selectionPaintRect() const
+{
+    return QRect(0, 0, selectionLineWidth, height());
+}
+
+QRegion StyledRecyclerListItem::borderPaintRect() const
+{
+    QRegion region;
+
+    region = region.united(QRect(0, 0, width(), borderLineWidth));
+    region = region.united(QRect(0, height()-borderLineWidth, width(), borderLineWidth));
+    return region;
+}
+
+
+
 void StyledRecyclerListItem::enterEvent(QEvent *event)
 {
     QWidget::enterEvent(event);
-    setFrameShape(QFrame::Box);
-    QPalette pal = palette();
-    previousColor = pal.color(backgroundRole());
-    pal.setColor(backgroundRole(), previousColor.darker(110));
-    setPalette(pal);
+
+    update(borderPaintRect());
+
 }
 
 void StyledRecyclerListItem::leaveEvent(QEvent *event)
 {
     QWidget::leaveEvent(event);
-    setFrameShape(QFrame::NoFrame);
-    QPalette pal = palette();
-    pal.setColor(backgroundRole(), previousColor);
-    setPalette(pal);
 
+    update(borderPaintRect());
 
-}*/
+}
 
 void StyledRecyclerListItem::paintEvent(QPaintEvent *event)
 {
     QStyleOption opt;
     opt.init(this);
     QPainter p(this);
-    style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
 
-    //qDebug() << "ITEM PAINT EVENT" << event->rect();
-    //p.fillRect(event->rect(), Qt::red);
+    if (underMouse()) {
+        QRegion region = borderPaintRect();
+        for (auto it=region.begin(); it!=region.end(); it++) {
+            p.fillRect(*it, palette().windowText());
+        }
+    }
+
+    if (isSelected) {
+        QRect selection = selectionPaintRect();
+        if (event->region().intersects(selection)) {
+            p.fillRect(event->region().intersected(selection).boundingRect(), palette().highlight());
+        }
+    }
+
+    style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
 }
 

@@ -2,20 +2,27 @@
 #define STYLEDRECYCLERLISTITEM_H
 
 #include <QFrame>
+#include <QRegion>
 
 class StyledRecyclerListItem : public QWidget
 {
     Q_OBJECT
 public:
     explicit StyledRecyclerListItem(QWidget *parent = nullptr);
+    void setSelected(bool selected);
 
 protected:
     void paintEvent(QPaintEvent *) override;
-    //void enterEvent(QEvent *event) override;
-    //void leaveEvent(QEvent *event) override;
+    void enterEvent(QEvent *event) override;
+    void leaveEvent(QEvent *event) override;
 
 private:
-    QColor previousColor;
+    QRect selectionPaintRect() const;
+    QRegion borderPaintRect() const;
+
+    bool isSelected;
+    int selectionLineWidth = 5;
+    int borderLineWidth = 1;
 
 };
 
