@@ -24,6 +24,7 @@ MainWindow::MainWindow(QWidget *parent)
         QStandardItem *item = new QStandardItem(QString::number(i+1));
         item->setData("Channel " + QString::number(i+1), Qt::ToolTipRole);
         item->setData(0, Qt::UserRole);
+        //item->setFlags(Qt::NoItemFlags);
         model->appendRow(item);
     }
 

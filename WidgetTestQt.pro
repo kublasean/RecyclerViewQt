@@ -12,9 +12,12 @@ CONFIG -= debug_and_release
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    channel-slider/channelitemmodel.cpp \
+    channel-slider/channelmimedata.cpp \
     channel-slider/channelslideradapter.cpp \
     channel-slider/channelsliderviewholder.cpp \
     channel-slider/customlistitem.cpp \
+    draglabelwidget.cpp \
     main.cpp \
     mainwindow.cpp \
     recycler/recyclerview.cpp \
@@ -24,9 +27,12 @@ SOURCES += \
     recycler/viewholder.cpp
 
 HEADERS += \
+    channel-slider/channelitemmodel.h \
+    channel-slider/channelmimedata.h \
     channel-slider/channelslideradapter.h \
     channel-slider/channelsliderviewholder.h \
     channel-slider/customlistitem.h \
+    draglabelwidget.h \
     mainwindow.h \
     recycler/recyclerview.h \
     recycler/recyclerviewadapter.h \

@@ -78,15 +78,17 @@ void ChannelSliderAdapter::newUserChannelValue(int dataPos, int val)
 // TODO: do all rows, not just the first
 void ChannelSliderAdapter::onDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles)
 {
-    qDebug() << "DATA CHANGED" << topLeft.row();
+    for (int i=topLeft.row(); i<=bottomRight.row(); i++) {
+        qDebug() << "DATA CHANGED" << i;
 
-    ViewHolder *vh = findViewHolder(topLeft.row());
-    if (vh == nullptr)
-        return;
+        ViewHolder *vh = findViewHolder(i);
+        if (vh == nullptr)
+            return;
 
-    CustomListItem *view = qobject_cast<CustomListItem *>(vh->getItemView());
-    Q_CHECK_PTR(view != nullptr);
-    view->setValue(dataModel->data(topLeft, Qt::UserRole).toInt());
+        CustomListItem *view = qobject_cast<CustomListItem *>(vh->getItemView());
+        Q_ASSERT(view != nullptr);
+        view->setValue(dataModel->data(dataModel->index(i, 0), Qt::UserRole).toInt());
+    }
 }
 
 void ChannelSliderAdapter::setSelectionModel(QItemSelectionModel *model)

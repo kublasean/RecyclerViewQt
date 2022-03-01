@@ -19,6 +19,9 @@ RecyclerView::RecyclerView(RecyclerViewAdapter *adapter, int itemHeight, QWidget
 
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    setAcceptDrops(true);
+    setDropIndicatorShown(true);
+    setDragDropMode(QAbstractItemView::DropOnly);
 
     setItemDelegate(nullptr);
 
@@ -90,7 +93,19 @@ ViewHolder *RecyclerView::populateItem(int dataPos, int y)
     QWidget *view = vh->getItemView();
     view->setParent(viewport());
 
-    vh->onSelectionChanged(selectionModel()->isRowSelected(dataPos));
+    QModelIndex index = model()->index(dataPos, 0);
+    if (index.isValid()) {
+        Qt::ItemFlags flags = model()->flags(index);
+        if (flags.testFlag(Qt::ItemIsSelectable)) {
+            vh->onSelectionChanged(selectionModel()->isRowSelected(dataPos));
+        }
+        view->setAcceptDrops(flags.testFlag(Qt::ItemIsDropEnabled));
+        view->setEnabled(flags.testFlag(Qt::ItemIsEnabled));
+    } else {
+        vh->onSelectionChanged(false);
+        view->setAcceptDrops(false);
+        view->setEnabled(false);
+    }
 
     if (dataPos % 2 == 0) {
         view->setBackgroundRole(QPalette::Base);
