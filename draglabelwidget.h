@@ -8,7 +8,7 @@ class DragLabelWidget : public QLabel
 {
     Q_OBJECT
 public:
-    DragLabelWidget(QWidget *parent);
+    DragLabelWidget(QWidget *parent = nullptr);
 
 protected:
     void mousePressEvent(QMouseEvent *event) override;

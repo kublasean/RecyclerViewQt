@@ -3,14 +3,18 @@
 
 #include "recycler/recyclerview.h"
 #include "channel-slider/channelslideradapter.h"
-#include <QWidget>
+#include "channel-slider/channelitemmodel.h"
+#include "draglabelwidget.h"
 
+#include <QWidget>
 #include <QVBoxLayout>
+#include <QHBoxLayout>
 #include <QSlider>
 #include <QPushButton>
 #include <QScrollBar>
 #include <QDockWidget>
 #include <QStandardItemModel>
+#include <QListView>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -18,31 +22,22 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    QStandardItemModel *model = new QStandardItemModel(this);
+    //QDockWidget *widget = new QDockWidget();
+    //widget->setWidget(topButton);
+    //widget->setWidget(new DragLabelWidget());
+    //addDockWidget(Qt::DockWidgetArea::LeftDockWidgetArea, widget);
 
-    for (int i=0; i<512; i++) {
-        QStandardItem *item = new QStandardItem(QString::number(i+1));
-        item->setData("Channel " + QString::number(i+1), Qt::ToolTipRole);
-        item->setData(0, Qt::UserRole);
-        //item->setFlags(Qt::NoItemFlags);
-        model->appendRow(item);
-    }
-
-    QDockWidget *widget = new QDockWidget();
-    QPushButton *topButton = new QPushButton();
-    widget->setWidget(topButton);
-
-    addDockWidget(Qt::DockWidgetArea::LeftDockWidgetArea, widget);
-
-    ChannelSliderAdapter *adapter = new ChannelSliderAdapter(model);
+    ChannelSliderAdapter *adapter = new ChannelSliderAdapter(new ChannelItemModel(this));
     RecyclerView *recycler = new RecyclerView(adapter);
     adapter->setSelectionModel(recycler->selectionModel());
 
-    setCentralWidget(recycler);
+    //setCentralWidget(recycler);
 
-    connect(topButton, &QPushButton::pressed, this, [recycler]() {
-        recycler->verticalScrollBar()->setValue(0);
-    });
+    QWidget *main = new QWidget();
+    main->setLayout(new QHBoxLayout());
+    main->layout()->addWidget(recycler);
+    main->layout()->addWidget(new DragLabelWidget());
+    setCentralWidget(main);
 }
 
 MainWindow::~MainWindow()

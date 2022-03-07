@@ -6,6 +6,7 @@
 #include <QByteArray>
 #include <QWindow>
 #include <QDrag>
+#include <QDebug>
 #include <QApplication>
 
 DragLabelWidget::DragLabelWidget(QWidget *parent)
@@ -32,9 +33,11 @@ void DragLabelWidget::mouseMoveEvent(QMouseEvent *event)
     if ((event->pos() - dragPos).manhattanLength() < QApplication::startDragDistance())
         return;
 
+    qDebug() << "EVENT POS" << event->pos() << "WIDGET POS" << pos();
+
     ChannelMimeData *data = new ChannelMimeData();
     data->channelName = text();
-    data->hotspot = event->pos() - pos();
+    data->hotspot = event->pos();
 
     qreal dpr = window()->windowHandle()->devicePixelRatio();
     QPixmap pixmap(size() * dpr);

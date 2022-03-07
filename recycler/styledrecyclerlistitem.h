@@ -10,6 +10,7 @@ class StyledRecyclerListItem : public QWidget
 public:
     explicit StyledRecyclerListItem(QWidget *parent = nullptr);
     void setSelected(bool selected);
+    void setIsDropSite(bool dropSite);
 
 protected:
     void paintEvent(QPaintEvent *) override;
@@ -21,6 +22,7 @@ private:
     QRegion borderPaintRect() const;
 
     bool isSelected;
+    bool isDropSite;
     int selectionLineWidth = 5;
     int borderLineWidth = 1;
 

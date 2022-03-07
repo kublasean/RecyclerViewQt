@@ -1,7 +1,9 @@
 #include "recyclerview.h"
+#include "styledrecyclerlistitem.h"
 
 #include <QDebug>
 #include <QScrollBar>
+#include <QDragMoveEvent>
 
 RecyclerView::RecyclerView(RecyclerViewAdapter *adapter, int itemHeight, QWidget *parent) :
     QAbstractItemView(parent)
@@ -22,6 +24,7 @@ RecyclerView::RecyclerView(RecyclerViewAdapter *adapter, int itemHeight, QWidget
     setAcceptDrops(true);
     setDropIndicatorShown(true);
     setDragDropMode(QAbstractItemView::DropOnly);
+    setAutoScroll(true);
 
     setItemDelegate(nullptr);
 
@@ -99,18 +102,12 @@ ViewHolder *RecyclerView::populateItem(int dataPos, int y)
         if (flags.testFlag(Qt::ItemIsSelectable)) {
             vh->onSelectionChanged(selectionModel()->isRowSelected(dataPos));
         }
-        view->setAcceptDrops(flags.testFlag(Qt::ItemIsDropEnabled));
+        //view->setAcceptDrops(flags.testFlag(Qt::ItemIsDropEnabled));
         view->setEnabled(flags.testFlag(Qt::ItemIsEnabled));
     } else {
         vh->onSelectionChanged(false);
-        view->setAcceptDrops(false);
+        //view->setAcceptDrops(false);
         view->setEnabled(false);
-    }
-
-    if (dataPos % 2 == 0) {
-        view->setBackgroundRole(QPalette::Base);
-    } else {
-        view->setBackgroundRole(QPalette::AlternateBase);
     }
 
     adapter->bindViewHolder(vh, dataPos);
@@ -194,6 +191,24 @@ void RecyclerView::resizeEvent(QResizeEvent *event)
         populateItemsBelow(adapter->activeViewMap.lastKey() + 1);
     }
 }
+
+void RecyclerView::dragMoveEvent(QDragMoveEvent *event)
+{
+    QAbstractItemView::dragMoveEvent(event);
+
+
+    int row = indexAt(event->pos()).row();
+    ViewHolder *vh = adapter->findViewHolder(row);
+    if (vh == nullptr)
+        return;
+
+    StyledRecyclerListItem *item = qobject_cast<StyledRecyclerListItem *>(vh->getItemView());
+    if (item == nullptr)
+        return;
+
+    item->setIsDropSite(event->isAccepted());
+}
+
 
 void RecyclerView::scrollContentsBy(int dx, int dy)
 {

@@ -19,6 +19,8 @@ public:
 
 protected:
     void resizeEvent(QResizeEvent *event) override;
+    void dragMoveEvent(QDragMoveEvent *event) override;
+
     void scrollContentsBy(int dx, int dy) override;
 
     int horizontalOffset() const override { return 0; }

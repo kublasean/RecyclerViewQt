@@ -2,6 +2,8 @@
 #define CHANNELSLIDERADAPTER_H
 
 #include "recycler/recyclerviewadapter.h"
+#include "channel-slider/channelitemmodel.h"
+#include "channelsliderviewholder.h"
 
 #include <QObject>
 #include <QVector>
@@ -18,6 +20,9 @@ public:
     void onRecycleViewHolder(ViewHolder *vh) const override;
 
     void setSelectionModel(QItemSelectionModel *selectionModel);
+
+private:
+    void updateViewHolder(ChannelSliderViewHolder *vh, ChannelUserData newUserData);
 
 private slots:
     void newUserChannelValue(int dataPos, int val);

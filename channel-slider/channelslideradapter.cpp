@@ -1,6 +1,7 @@
 #include "channelslideradapter.h"
 #include "customlistitem.h"
 #include "channelsliderviewholder.h"
+#include "channelitemmodel.h"
 
 #include <QDebug>
 
@@ -25,20 +26,27 @@ void ChannelSliderAdapter::onRecycleViewHolder(ViewHolder *vh) const
     disconnect(customViewHolder, &ChannelSliderViewHolder::valueChanged, nullptr, nullptr);
 }
 
-void ChannelSliderAdapter::onBindViewHolder(ViewHolder *vh, int dataPos)
+void ChannelSliderAdapter::updateViewHolder(ChannelSliderViewHolder *vh, ChannelUserData userData)
 {
-    Q_ASSERT(dataModel->hasIndex(dataPos, 0));
-
     ChannelSliderViewHolder *channelViewHolder = qobject_cast<ChannelSliderViewHolder *>(vh);
     Q_ASSERT(channelViewHolder != nullptr);
 
     CustomListItem *view = qobject_cast<CustomListItem *>(vh->getItemView());
     Q_ASSERT(view != nullptr);
 
-    QModelIndex index = dataModel->index(dataPos, 0);
-    view->setChannel(dataPos+1, dataModel->data(index).toString());
-    view->setValue(dataModel->data(index, Qt::UserRole).toInt());
-    vh->dataPos = dataPos;
+    view->setChannel(userData.channel, userData.name);
+    view->setEnabled(userData.enabled);
+    view->setValue(userData.value);
+}
+
+void ChannelSliderAdapter::onBindViewHolder(ViewHolder *vh, int dataPos)
+{
+    ChannelSliderViewHolder *channelViewHolder = qobject_cast<ChannelSliderViewHolder *>(vh);
+    channelViewHolder->dataPos = dataPos;
+
+    ChannelUserData userData = qvariant_cast<ChannelUserData>(dataModel->data(dataModel->index(dataPos, 0), Qt::UserRole));
+    updateViewHolder(channelViewHolder, userData);
+
     connect(channelViewHolder, &ChannelSliderViewHolder::valueChanged, this, &ChannelSliderAdapter::newUserChannelValue);
 }
 
@@ -49,7 +57,7 @@ void ChannelSliderAdapter::newUserChannelValue(int dataPos, int val)
     Q_ASSERT(dataModel->hasIndex(dataPos, 0));
 
     QModelIndex index = dataModel->index(dataPos, 0);
-    dataModel->setData(index, val, Qt::UserRole);
+    dataModel->setData(index, val, Qt::EditRole);
 
     if (selectionModel == nullptr || !selectionModel->isRowSelected(dataPos))
         return;
@@ -70,7 +78,7 @@ void ChannelSliderAdapter::newUserChannelValue(int dataPos, int val)
             view->blockSignals(false);
         }
 
-        dataModel->setData(dataModel->index(it->row(), 0), val, Qt::UserRole);
+        dataModel->setData(dataModel->index(it->row(), 0), val, Qt::EditRole);
     }
 }
 
@@ -85,9 +93,16 @@ void ChannelSliderAdapter::onDataChanged(const QModelIndex &topLeft, const QMode
         if (vh == nullptr)
             return;
 
-        CustomListItem *view = qobject_cast<CustomListItem *>(vh->getItemView());
-        Q_ASSERT(view != nullptr);
-        view->setValue(dataModel->data(dataModel->index(i, 0), Qt::UserRole).toInt());
+        if (roles.isEmpty() || roles.contains(Qt::UserRole)) {
+            ChannelSliderViewHolder *channelVh = qobject_cast<ChannelSliderViewHolder *>(vh);
+            Q_ASSERT(channelVh != nullptr);
+
+            ChannelUserData userData = qvariant_cast<ChannelUserData>(dataModel->data(dataModel->index(i, 0), Qt::UserRole));
+            updateViewHolder(channelVh, userData);
+        } else if (roles.contains(Qt::EditRole)) {
+            CustomListItem *view = qobject_cast<CustomListItem *>(vh->getItemView());
+            view->setValue(dataModel->data(dataModel->index(i, 0), Qt::EditRole).toInt());
+        }
     }
 }
 

@@ -10,6 +10,7 @@ StyledRecyclerListItem::StyledRecyclerListItem(QWidget *parent)
 {
     setAutoFillBackground(true);
     isSelected = false;
+    isDropSite = false;
     //QPalette pal = palette();
     //pal.setColor(QPalette::Highlight, QColor("#cce4f7"));
     //pal.setColor(QPalette::HighlightedText, pal.color(QPalette::Foreground));
@@ -20,6 +21,12 @@ void StyledRecyclerListItem::setSelected(bool selected)
 {
     isSelected = selected;
     update(selectionPaintRect());
+}
+
+void StyledRecyclerListItem::setIsDropSite(bool dropSite)
+{
+    isDropSite = dropSite;
+    update(borderPaintRect());
 }
 
 QRect StyledRecyclerListItem::selectionPaintRect() const
@@ -33,6 +40,8 @@ QRegion StyledRecyclerListItem::borderPaintRect() const
 
     region = region.united(QRect(0, 0, width(), borderLineWidth));
     region = region.united(QRect(0, height()-borderLineWidth, width(), borderLineWidth));
+    region = region.united(QRect(0, 0, borderLineWidth, height()));
+    region = region.united(QRect(width()-borderLineWidth, 0, borderLineWidth, height()));
     return region;
 }
 
@@ -56,11 +65,11 @@ void StyledRecyclerListItem::leaveEvent(QEvent *event)
 
 void StyledRecyclerListItem::paintEvent(QPaintEvent *event)
 {
-    QStyleOption opt;
-    opt.init(this);
+    /*QStyleOption opt;
+    opt.init(this);*/
     QPainter p(this);
 
-    if (underMouse()) {
+    if (underMouse() /*|| isDropSite*/) {
         QRegion region = borderPaintRect();
         for (auto it=region.begin(); it!=region.end(); it++) {
             p.fillRect(*it, palette().windowText());
@@ -74,6 +83,9 @@ void StyledRecyclerListItem::paintEvent(QPaintEvent *event)
         }
     }
 
-    style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
+    //style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
+
+    QWidget::paintEvent(event);
 }
+
 

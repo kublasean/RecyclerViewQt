@@ -11,8 +11,12 @@ class ChannelMimeData : public QMimeData
 public:
     explicit ChannelMimeData();
 
+    bool hasFormat(const QString &format) const override;
+
     QPoint hotspot;
     QString channelName;
+
+    static QString channelFormat() { return "application/channel-slider-data"; }
 };
 
 #endif // CHANNELMIMEDATA_H
