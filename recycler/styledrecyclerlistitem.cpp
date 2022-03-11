@@ -9,30 +9,14 @@ StyledRecyclerListItem::StyledRecyclerListItem(QWidget *parent)
     : QWidget{parent}
 {
     setAutoFillBackground(true);
-    isSelected = false;
-    isDropSite = false;
+    setBackgroundRole(QPalette::Base);
+
     //QPalette pal = palette();
     //pal.setColor(QPalette::Highlight, QColor("#cce4f7"));
     //pal.setColor(QPalette::HighlightedText, pal.color(QPalette::Foreground));
     //setPalette(pal);
 }
 
-void StyledRecyclerListItem::setSelected(bool selected)
-{
-    isSelected = selected;
-    update(selectionPaintRect());
-}
-
-void StyledRecyclerListItem::setIsDropSite(bool dropSite)
-{
-    isDropSite = dropSite;
-    update(borderPaintRect());
-}
-
-QRect StyledRecyclerListItem::selectionPaintRect() const
-{
-    return QRect(0, 0, selectionLineWidth, height());
-}
 
 QRegion StyledRecyclerListItem::borderPaintRect() const
 {
@@ -50,17 +34,14 @@ QRegion StyledRecyclerListItem::borderPaintRect() const
 void StyledRecyclerListItem::enterEvent(QEvent *event)
 {
     QWidget::enterEvent(event);
-
-    update(borderPaintRect());
+    //update(borderPaintRect());
 
 }
 
 void StyledRecyclerListItem::leaveEvent(QEvent *event)
 {
     QWidget::leaveEvent(event);
-
-    update(borderPaintRect());
-
+    //update(borderPaintRect());
 }
 
 void StyledRecyclerListItem::paintEvent(QPaintEvent *event)
@@ -69,19 +50,12 @@ void StyledRecyclerListItem::paintEvent(QPaintEvent *event)
     opt.init(this);*/
     QPainter p(this);
 
-    if (underMouse() /*|| isDropSite*/) {
+    /*if (underMouse()) {
         QRegion region = borderPaintRect();
         for (auto it=region.begin(); it!=region.end(); it++) {
             p.fillRect(*it, palette().windowText());
         }
-    }
-
-    if (isSelected) {
-        QRect selection = selectionPaintRect();
-        if (event->region().intersects(selection)) {
-            p.fillRect(event->region().intersected(selection).boundingRect(), palette().highlight());
-        }
-    }
+    }*/
 
     //style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
 

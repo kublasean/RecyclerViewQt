@@ -18,11 +18,6 @@ ViewHolder::ViewHolder(QObject *parent, QWidget *view)
 void ViewHolder::onSelectionChanged(bool isSelected)
 {
     selected = isSelected;
-
-    StyledRecyclerListItem *item = qobject_cast<StyledRecyclerListItem *>(itemView);
-    if (item != nullptr) {
-        item->setSelected(isSelected);
-    }
 }
 
 ViewHolder::~ViewHolder()

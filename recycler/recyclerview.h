@@ -20,6 +20,7 @@ public:
 protected:
     void resizeEvent(QResizeEvent *event) override;
     void dragMoveEvent(QDragMoveEvent *event) override;
+    void paintEvent(QPaintEvent *event) override;
 
     void scrollContentsBy(int dx, int dy) override;
 
@@ -36,6 +37,8 @@ protected slots:
     void dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles = QVector<int>()) override {}
 
 private:
+    QRect sectionRect(int startRow, int endRow) const;
+
     ViewHolder *populateItem(int dataPos, int y);
     void populateItemsBelow(int startDataPos);
     void populateItemsAbove(int startDataPos);
@@ -49,6 +52,7 @@ private:
 
     const int numExtraActive = 0;
     int itemHeight;
+    const int itemMargin = 24; // MUST BE EVEN
 };
 
 #endif // RECYCLERVIEW_H
