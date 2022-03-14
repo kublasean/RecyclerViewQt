@@ -212,18 +212,22 @@ void RecyclerView::dragMoveEvent(QDragMoveEvent *event)
 {
     QAbstractItemView::dragMoveEvent(event);
 
-
-    int row = indexAt(event->pos()).row();
-    ViewHolder *vh = adapter->findViewHolder(row);
-    if (vh == nullptr)
-        return;
-
-    StyledRecyclerListItem *item = qobject_cast<StyledRecyclerListItem *>(vh->getItemView());
-    if (item == nullptr)
-        return;
-
-    // TODO
+    if (event->isAccepted()) {
+        int row = indexAt(event->pos()).row();
+        dragPos = sectionRect(row, row);
+    } else {
+        QRect updateRect = dragPos;
+        dragPos = QRect();
+        viewport()->update(updateRect);
+    }
 }
+
+QRect RecyclerView::marginHelper(const QRect &rect) const
+{
+    int drawShift = itemMargin / 2;
+    return rect.marginsRemoved(QMargins(drawShift, drawShift, drawShift, drawShift));
+}
+
 
 void RecyclerView::paintEvent(QPaintEvent *event)
 {
@@ -248,8 +252,15 @@ void RecyclerView::paintEvent(QPaintEvent *event)
 
             qDebug() << *rectIterator;
         }*/
-        int margin = itemMargin / 2;
-        painter.drawRect(sectionRect(it->top(), it->bottom()).marginsRemoved(QMargins(margin, margin, margin, margin)));
+        painter.drawRect(marginHelper(sectionRect(it->top(), it->bottom())));
+    }
+
+    if (state() == QAbstractItemView::DraggingState && !dragPos.isNull()) {
+        QBrush brush = pen.brush();
+        brush.setColor(brush.color().lighter());
+        pen.setBrush(brush);
+        painter.setPen(pen);
+        painter.drawRect(marginHelper(dragPos));
     }
 
     painter.restore();
