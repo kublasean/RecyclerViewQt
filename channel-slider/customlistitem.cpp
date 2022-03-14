@@ -4,7 +4,7 @@
 #include <QSlider>
 
 CustomListItem::CustomListItem(QWidget *parent) :
-    StyledRecyclerListItem(parent),
+    QWidget(parent),
     ui(new Ui::CustomListItem)
 {
     ui->setupUi(this);
@@ -14,6 +14,9 @@ CustomListItem::CustomListItem(QWidget *parent) :
     connect(ui->slider, &QSlider::valueChanged, ui->spinBox, &QSpinBox::setValue);
     connect(ui->spinBox, QOverload<int>::of(&QSpinBox::valueChanged), ui->slider, &QSlider::setValue);
     connect(ui->spinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &CustomListItem::valueChanged);
+
+    setAutoFillBackground(true);
+    setBackgroundRole(QPalette::Base);
 }
 
 CustomListItem::~CustomListItem()

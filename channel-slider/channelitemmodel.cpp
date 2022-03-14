@@ -23,7 +23,16 @@ Qt::ItemFlags ChannelItemModel::flags(const QModelIndex &index) const
         return Qt::NoItemFlags;
     }
 
-    return QAbstractListModel::flags(index) | Qt::ItemIsDropEnabled;
+    Qt::ItemFlags itemFlags = QAbstractListModel::flags(index) | Qt::ItemIsDropEnabled;
+
+    ChannelUserData userData = qvariant_cast<ChannelUserData>(data(index, Qt::UserRole));
+
+    if (!userData.enabled) {
+        itemFlags &= ~Qt::ItemIsEnabled;
+        itemFlags &= ~Qt::ItemIsSelectable;
+    }
+
+    return itemFlags;
 }
 
 Qt::DropActions ChannelItemModel::supportedDropActions() const

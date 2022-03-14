@@ -1,5 +1,4 @@
 #include "recyclerview.h"
-#include "styledrecyclerlistitem.h"
 
 #include <QDebug>
 #include <QScrollBar>
@@ -38,15 +37,11 @@ RecyclerView::RecyclerView(RecyclerViewAdapter *adapter, int itemHeight, QWidget
 
 QModelIndex RecyclerView::indexAt(const QPoint &point) const
 {
-    //return QModelIndex();
-    //int row = (point.y() - viewport()->rect().top() + verticalScrollBar()->value()) / itemHeight;
-
     int row = (point.y() - viewport()->rect().top() + verticalScrollBar()->value() - itemMargin) / (itemHeight + itemMargin);
 
     if (!model()->hasIndex(row, 0))
         return QModelIndex();
 
-    qDebug() << "indexAt" << point.y() << "is" << row;
     return model()->index(row, 0);
 }
 
@@ -76,13 +71,13 @@ void RecyclerView::scrollTo(const QModelIndex &index, QAbstractItemView::ScrollH
     verticalScrollBar()->setValue(viewport()->rect().top() - yPos + itemHeight * index.row() + (index.row()+1) * itemMargin);
 }
 
+// The rectangle of just the item, no margins
 QRect RecyclerView::visualRect(const QModelIndex &index) const
 {
-    qDebug() << "VISUAL RECT" << index.row();
-    //return QRect();
     return QRect(0, getItemPos(index.row()), viewport()->width(), itemHeight);
 }
 
+// Includes margins around the items
 QRect RecyclerView::sectionRect(int startRow, int endRow) const
 {
     int numRows = (endRow - startRow + 1);
@@ -91,19 +86,24 @@ QRect RecyclerView::sectionRect(int startRow, int endRow) const
     return QRect(0, getItemPos(startRow) - itemMargin, viewport()->width(), sectionHeight);
 }
 
-
+// Height of all items and margins
 int RecyclerView::totalItemHeight() const
 {
     return adapter->model()->rowCount() * itemHeight + (adapter->model()->rowCount()+1) * itemMargin;
 }
 
+// Gets the display position (position accounting for scrolling)
 int RecyclerView::getItemPos(int dataPos) const
 {
     return viewport()->rect().top() - verticalScrollBar()->value() + itemHeight * dataPos + (dataPos+1)*itemMargin;
 }
 
-ViewHolder *RecyclerView::populateItem(int dataPos, int y)
+// dataPos is the row, y should be the display position of row
+void RecyclerView::populateItem(int dataPos, int y)
 {
+    QModelIndex index = model()->index(dataPos, 0);
+    Q_ASSERT(model()->checkIndex(index, QAbstractItemModel::CheckIndexOption::IndexIsValid));
+
     ViewHolder *vh = pool.getRecycledView();
     if (vh == nullptr)
         vh = adapter->createViewHolder();
@@ -111,19 +111,13 @@ ViewHolder *RecyclerView::populateItem(int dataPos, int y)
     QWidget *view = vh->getItemView();
     view->setParent(viewport());
 
-    QModelIndex index = model()->index(dataPos, 0);
-    if (index.isValid()) {
-        Qt::ItemFlags flags = model()->flags(index);
-        if (flags.testFlag(Qt::ItemIsSelectable)) {
-            vh->onSelectionChanged(selectionModel()->isRowSelected(dataPos));
-        }
-        //view->setAcceptDrops(flags.testFlag(Qt::ItemIsDropEnabled));
-        view->setEnabled(flags.testFlag(Qt::ItemIsEnabled));
+    Qt::ItemFlags flags = model()->flags(index);
+    if (flags.testFlag(Qt::ItemIsSelectable)) {
+        vh->onSelectionChanged(selectionModel()->isRowSelected(dataPos));
     } else {
         vh->onSelectionChanged(false);
-        //view->setAcceptDrops(false);
-        view->setEnabled(false);
     }
+    view->setEnabled(flags.testFlag(Qt::ItemIsEnabled));
 
     adapter->bindViewHolder(vh, dataPos);
 
@@ -131,14 +125,12 @@ ViewHolder *RecyclerView::populateItem(int dataPos, int y)
     view->move(viewport()->rect().left() + itemMargin, y);
     view->show();
 
-    qDebug() << "POPULATE " << dataPos << view->pos();
-    return vh;
+    //qDebug() << "POPULATE " << dataPos << view->pos();
 }
 
 // TODO: refactor the following into one function that works both ways
 void RecyclerView::populateItemsBelow(int startDataPos)
 {
-    qDebug() << "POPLATE BELOW" << startDataPos;
     int bottom = viewport()->rect().bottom();
 
     if (getItemPos(startDataPos) > bottom || startDataPos < 0)
@@ -212,10 +204,15 @@ void RecyclerView::dragMoveEvent(QDragMoveEvent *event)
 {
     QAbstractItemView::dragMoveEvent(event);
 
+    // Can drop here, parent class will trigger repaint
     if (event->isAccepted()) {
         int row = indexAt(event->pos()).row();
         dragPos = sectionRect(row, row);
-    } else {
+    }
+
+    // Can't drop here, repaint the area where the drop rectangle highlight was
+    // Set dragPos to NULL
+    else {
         QRect updateRect = dragPos;
         dragPos = QRect();
         viewport()->update(updateRect);
@@ -231,7 +228,7 @@ QRect RecyclerView::marginHelper(const QRect &rect) const
 
 void RecyclerView::paintEvent(QPaintEvent *event)
 {
-    qDebug() << "PAINT REGION:" << event->region().boundingRect();
+    //qDebug() << "PAINT BOUNDS:" << event->region().boundingRect();
 
     QPainter painter;
     painter.begin(viewport());
@@ -243,18 +240,13 @@ void RecyclerView::paintEvent(QPaintEvent *event)
     pen.setJoinStyle(Qt::MiterJoin);
     painter.setPen(pen);
 
+    // Selection border painting
     const QItemSelection selection = selectionModel()->selection();
     for (auto it=selection.begin(); it!=selection.end(); it++) {
-        /*QRegion section = event->region().intersected(sectionRect(it->top(), it->bottom()));
-        for (auto rectIterator = section.begin(); rectIterator!=section.end(); rectIterator++) {
-            //painter.fillRect(*rectIterator, palette().highlight());
-            painter.drawRect(*rectIterator);
-
-            qDebug() << *rectIterator;
-        }*/
         painter.drawRect(marginHelper(sectionRect(it->top(), it->bottom())));
     }
 
+    // Drop-zone border painting
     if (state() == QAbstractItemView::DraggingState && !dragPos.isNull()) {
         QBrush brush = pen.brush();
         brush.setColor(brush.color().lighter());
@@ -301,15 +293,11 @@ void RecyclerView::scrollContentsBy(int dx, int dy)
     if (adapter->activeViewMap.isEmpty())
         return;
 
-
     if (adapter->activeViewMap.first()->getItemView()->y() - itemMargin > viewport()->rect().top()) {
-        //qDebug() << "POP ABOVE " << adapter->activeViewMap.firstKey() - 1;
         populateItemsAbove(adapter->activeViewMap.firstKey() - 1);
     }
     else if ((adapter->activeViewMap.last()->getItemView()->rect().bottom() + itemMargin) < viewport()->rect().bottom()) {
         populateItemsBelow(adapter->activeViewMap.lastKey() + 1);
-    } else {
-        qDebug() << "NO POP";
     }
 }
 
@@ -324,48 +312,64 @@ QModelIndex RecyclerView::moveCursor(QAbstractItemView::CursorAction cursorActio
     return QModelIndex();
 }
 
-// TODO
 void RecyclerView::setSelection(const QRect &rect, QItemSelectionModel::SelectionFlags flags)
 {
     Q_ASSERT(selectionModel() != nullptr);
 
-    QModelIndex topLeft = indexAt(rect.topLeft());
-    QModelIndex bottomRight = indexAt(rect.bottomRight());
+    QRect normRect = rect.normalized(); // we don't want negative width or height
 
-    if (topLeft.isValid() && bottomRight.isValid()) {
-        qDebug() << "SELECTING";
-        selectionModel()->select(QItemSelection(topLeft, bottomRight), flags);
-    } else {
-        qDebug() << "SELECTION INVALID" << rect;
-        selectionModel()->select(QModelIndex(), flags);
+    QModelIndex topLeft = indexAt(normRect.topLeft());
+    QModelIndex bottomRight = indexAt(normRect.bottomRight());
+
+    QItemSelection selection;
+
+    int startRow = -1, endRow = -1;
+    for (int row=topLeft.row(); row<=bottomRight.row(); row++) {
+        QModelIndex item = model()->index(row, 0);
+        if (item.flags() & Qt::ItemIsEnabled && item.flags() & Qt::ItemIsSelectable) {
+            if (startRow == -1) {
+                startRow = row;
+                endRow = row;
+            } else {
+                if (row == endRow + 1) {
+                    endRow = row;
+                } else {
+                    selection.merge(QItemSelection(model()->index(startRow, 0), model()->index(endRow, 0)), QItemSelectionModel::Select);
+                    startRow = row;
+                    endRow = row;
+                }
+            }
+        }
     }
+
+    if (startRow != -1 && endRow != -1) {
+        selection.merge(QItemSelection(model()->index(startRow, 0), model()->index(endRow, 0)), QItemSelectionModel::Select);
+    }
+
+    selectionModel()->select(selection, flags);
 }
 
-// TODO
 QRegion	RecyclerView::visualRegionForSelection(const QItemSelection &selection) const
 {    
-    qDebug() << "SELECTION:" << selection.count();
-
     QRegion region;
     for (auto it=selection.begin(); it!=selection.end(); it++) {
-        qDebug() << "TOP INDEX" << it->top() << "BOTTOM INDEX" << it->bottom();
+        //qDebug() << "TOP INDEX" << it->top() << "BOTTOM INDEX" << it->bottom();
         region = region.united(sectionRect(it->top(), it->bottom()));
     }
 
-    qDebug() << "UPDATING" << region.boundingRect();
+    //qDebug() << "UPDATING" << region.boundingRect();
     return region;
 }
 
 void RecyclerView::selectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
-{
+{    
     QRegion region = visualRegionForSelection(selected);
     region = region.united(visualRegionForSelection(deselected));
 
-    qDebug() << "REGION UNITED:" << region.boundingRect();
-    viewport()->update(region);
-
     QList<QModelIndex> list = selected.indexes();
+    qDebug() << "Selection changed, selected count:" << list.count();
     for (auto it=list.begin(); it!=list.end(); it++) {
+        qDebug() << it->row();
         ViewHolder *vh = adapter->findViewHolder(it->row());
         if (vh == nullptr)
             continue;
@@ -380,6 +384,25 @@ void RecyclerView::selectionChanged(const QItemSelection &selected, const QItemS
 
         vh->onSelectionChanged(false);
     }
+
+    viewport()->update(region);
+
+    // TODO REMOVE
+    const QItemSelection selection = selectionModel()->selection();
+    list = selection.indexes();
+    qDebug() << "SELECTION COUNT:" << list.count();
+    for (auto it=list.begin(); it!=list.end(); it++) {
+        qDebug() << it->row();
+    }
+
+    for (auto it=selection.begin(); it!=selection.end(); it++) {
+        qDebug() << "TOP" << it->top() << "BOTTOM" << it->bottom() << "LEFT" << it->left() << "RIGHT" << it->right();
+    }
+}
+
+void RecyclerView::dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles)
+{
+
 }
 
 

@@ -34,13 +34,13 @@ protected:
 
 protected slots:
     void selectionChanged(const QItemSelection &selected, const QItemSelection &deselected) override;
-    void dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles = QVector<int>()) override {}
+    void dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles = QVector<int>()) override;
 
 private:
     QRect marginHelper(const QRect &rect) const;
     QRect sectionRect(int startRow, int endRow) const;
 
-    ViewHolder *populateItem(int dataPos, int y);
+    void populateItem(int dataPos, int y);
     void populateItemsBelow(int startDataPos);
     void populateItemsAbove(int startDataPos);
 

@@ -23,7 +23,6 @@ SOURCES += \
     recycler/recyclerview.cpp \
     recycler/recyclerviewadapter.cpp \
     recycler/recyclerviewpool.cpp \
-    recycler/styledrecyclerlistitem.cpp \
     recycler/viewholder.cpp
 
 HEADERS += \
@@ -37,7 +36,6 @@ HEADERS += \
     recycler/recyclerview.h \
     recycler/recyclerviewadapter.h \
     recycler/recyclerviewpool.h \
-    recycler/styledrecyclerlistitem.h \
     recycler/viewholder.h
 
 FORMS += \
