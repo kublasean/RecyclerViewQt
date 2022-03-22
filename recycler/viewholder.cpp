@@ -1,5 +1,4 @@
 #include "viewholder.h"
-#include "styledrecyclerlistitem.h"
 
 #include <QDebug>
 
@@ -15,10 +14,10 @@ ViewHolder::ViewHolder(QObject *parent, QWidget *view)
     //qDebug() << "NUM VH ALLOC: " << ++numViewHolderAlloc;
 }
 
-void ViewHolder::onSelectionChanged(bool isSelected)
+/*void ViewHolder::onSelectionChanged(bool isSelected)
 {
     selected = isSelected;
-}
+}*/
 
 ViewHolder::~ViewHolder()
 {

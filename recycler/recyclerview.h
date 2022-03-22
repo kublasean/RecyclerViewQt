@@ -21,6 +21,8 @@ protected:
     void resizeEvent(QResizeEvent *event) override;
     void dragMoveEvent(QDragMoveEvent *event) override;
     void paintEvent(QPaintEvent *event) override;
+    void mousePressEvent(QMouseEvent *event) override;
+    void keyPressEvent(QKeyEvent *event) override;
 
     void scrollContentsBy(int dx, int dy) override;
 
