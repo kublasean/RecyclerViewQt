@@ -13,13 +13,14 @@ CONFIG -= debug_and_release
 
 SOURCES += \
     channel-slider/channelitemmodel.cpp \
-    channel-slider/channelmimedata.cpp \
     channel-slider/channelslideradapter.cpp \
     channel-slider/channelsliderviewholder.cpp \
     channel-slider/customlistitem.cpp \
+    channel-slider/fixturemimedata.cpp \
     draglabelwidget.cpp \
     main.cpp \
     mainwindow.cpp \
+    recycler/recyclermimedata.cpp \
     recycler/recyclerview.cpp \
     recycler/recyclerviewadapter.cpp \
     recycler/recyclerviewpool.cpp \
@@ -27,12 +28,13 @@ SOURCES += \
 
 HEADERS += \
     channel-slider/channelitemmodel.h \
-    channel-slider/channelmimedata.h \
     channel-slider/channelslideradapter.h \
     channel-slider/channelsliderviewholder.h \
     channel-slider/customlistitem.h \
+    channel-slider/fixturemimedata.h \
     draglabelwidget.h \
     mainwindow.h \
+    recycler/recyclermimedata.h \
     recycler/recyclerview.h \
     recycler/recyclerviewadapter.h \
     recycler/recyclerviewpool.h \

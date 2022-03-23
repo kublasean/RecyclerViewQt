@@ -4,6 +4,8 @@
 #include <QLabel>
 #include <QPoint>
 
+#include "channel-slider/fixturemimedata.h"
+
 class DragLabelWidget : public QLabel
 {
     Q_OBJECT
@@ -16,6 +18,7 @@ protected:
 
 private:
     QPoint dragPos;
+    Fixture fixture;
 };
 
 #endif // DRAGLABELWIDGET_H

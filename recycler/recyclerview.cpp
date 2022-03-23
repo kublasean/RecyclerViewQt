@@ -1,4 +1,5 @@
 #include "recyclerview.h"
+#include "recyclermimedata.h"
 
 #include <QDebug>
 #include <QScrollBar>
@@ -204,10 +205,14 @@ void RecyclerView::dragMoveEvent(QDragMoveEvent *event)
 {
     QAbstractItemView::dragMoveEvent(event);
 
+
     // Can drop here, parent class will trigger repaint
     if (event->isAccepted()) {
         int row = indexAt(event->pos()).row();
-        dragPos = sectionRect(row, row);
+        const RecyclerMimeData *mimeData = qobject_cast<const RecyclerMimeData *>(event->mimeData());
+        Q_ASSERT(mimeData != nullptr);
+        int endRow = row + mimeData->rows - 1;
+        dragPos = sectionRect(row, endRow);
     }
 
     // Can't drop here, repaint the area where the drop rectangle highlight was

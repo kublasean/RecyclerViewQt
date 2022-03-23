@@ -1,5 +1,5 @@
 #include "channelitemmodel.h"
-#include "channelmimedata.h"
+#include "fixturemimedata.h"
 
 #include <QDebug>
 
@@ -42,10 +42,10 @@ Qt::DropActions ChannelItemModel::supportedDropActions() const
 
 QStringList ChannelItemModel::mimeTypes() const
 {
-    return { ChannelMimeData::channelFormat() };
+    return { FixtureMimeData::channelFormat() };
 }
 
-bool ChannelItemModel::canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) const
+bool ChannelItemModel::canDropMimeData(const QMimeData *mimeData, Qt::DropAction action, int row, int column, const QModelIndex &parent) const
 {
     if (!checkIndex(parent, CheckIndexOption::IndexIsValid)) {
         return false;
@@ -54,8 +54,17 @@ bool ChannelItemModel::canDropMimeData(const QMimeData *data, Qt::DropAction act
     if (action != Qt::DropAction::CopyAction)
         return false;
 
-    if (qobject_cast<const ChannelMimeData *>(data) == nullptr)
+    const FixtureMimeData *fixtureMimeData = qobject_cast<const FixtureMimeData *>(mimeData);
+    if (fixtureMimeData == nullptr)
         return false;
+
+    int endRow = parent.row() + fixtureMimeData->fixture.channels.count();
+
+    for (int i=parent.row(); i<endRow; i++) {
+        if (i >= rowCount(QModelIndex()) || channels[i].enabled) {
+            return false;
+        }
+    }
 
     return true;
 }
@@ -65,20 +74,23 @@ bool ChannelItemModel::dropMimeData(const QMimeData *mimeData, Qt::DropAction ac
     if (!canDropMimeData(mimeData, action, row, column, parent))
         return false;
 
-    const ChannelMimeData *chMimeData = qobject_cast<const ChannelMimeData *>(mimeData);
-    if (chMimeData == nullptr)
-        return false;
+    const FixtureMimeData *fixtureMimeData = qobject_cast<const FixtureMimeData *>(mimeData);
+    Q_ASSERT(fixtureMimeData != nullptr);
 
-    ChannelUserData userData;
-    userData.enabled = true;
-    userData.channel = row+1;
-    userData.value = 0;
-    userData.name = chMimeData->channelName;
+    for (int i=0; i<fixtureMimeData->fixture.channels.count(); i++) {
+        int row = parent.row() + i;
+        QModelIndex channelIndex = index(row);
+        ChannelUserData userData;
+        userData.enabled = true;
+        userData.channel = row+1;
+        userData.value = 0;
+        userData.name = fixtureMimeData->fixture.channels[i].name;
 
-    QVariant val;
-    val.setValue(userData);
+        QVariant val;
+        val.setValue(userData);
 
-    setData(parent, val, Qt::UserRole);
+        setData(channelIndex, val, Qt::UserRole);
+    }
     return true;
 }
 
@@ -132,3 +144,9 @@ QVariant ChannelItemModel::data(const QModelIndex &index, int role) const
 
     return ret;
 }
+
+QVariant ChannelItemModel::headerData(int row, Qt::Orientation orientation, int role) const
+{
+    return channels[row].fixtureId;
+}
+

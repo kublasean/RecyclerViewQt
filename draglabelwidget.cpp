@@ -1,5 +1,4 @@
 #include "draglabelwidget.h"
-#include "channel-slider/channelmimedata.h"
 
 #include <QMouseEvent>
 #include <QMimeData>
@@ -16,7 +15,13 @@ DragLabelWidget::DragLabelWidget(QWidget *parent)
     setFrameShadow(QFrame::Raised);
     setFrameShape(QFrame::Panel);
 
-    setText("Red Dimmer");
+    fixture.name = "DJ LIGHTS";
+    fixture.channels.append(FixtureChannel("Master Dimmer"));
+    fixture.channels.append(FixtureChannel("Red"));
+    fixture.channels.append(FixtureChannel("Green"));
+    fixture.channels.append(FixtureChannel("Blue"));
+
+    setText("DJ Lights");
 }
 
 void DragLabelWidget::mousePressEvent(QMouseEvent *event)
@@ -35,9 +40,9 @@ void DragLabelWidget::mouseMoveEvent(QMouseEvent *event)
 
     qDebug() << "EVENT POS" << event->pos() << "WIDGET POS" << pos();
 
-    ChannelMimeData *data = new ChannelMimeData();
-    data->channelName = text();
-    data->hotspot = event->pos();
+    FixtureMimeData *data = new FixtureMimeData();
+    data->fixture = fixture;
+    data->rows = fixture.channels.count();
 
     qreal dpr = window()->windowHandle()->devicePixelRatio();
     QPixmap pixmap(size() * dpr);
