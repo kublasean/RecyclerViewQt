@@ -15,7 +15,7 @@ public:
     explicit CustomListItem(QWidget *parent = nullptr);
     ~CustomListItem();
 
-    void setChannel(int channel, const QString &channelName);
+    void setDisplayData(int channel, const QString &name, bool isHeader);
     int getValue() const;
 
 public slots:

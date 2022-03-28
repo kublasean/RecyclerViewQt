@@ -28,7 +28,7 @@ MainWindow::MainWindow(QWidget *parent)
     //addDockWidget(Qt::DockWidgetArea::LeftDockWidgetArea, widget);
 
     ChannelSliderAdapter *adapter = new ChannelSliderAdapter(new ChannelItemModel(this));
-    RecyclerView *recycler = new RecyclerView(adapter);
+    RecyclerView *recycler = new RecyclerView(adapter, 75);
     adapter->setSelectionModel(recycler->selectionModel());
 
     //setCentralWidget(recycler);

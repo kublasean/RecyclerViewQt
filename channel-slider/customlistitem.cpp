@@ -29,10 +29,34 @@ void CustomListItem::setValue(int value)
     ui->slider->setValue(value);
 }
 
-void CustomListItem::setChannel(int channel, const QString &channelName)
+void CustomListItem::setDisplayData(int channel, const QString &name, bool isHeader)
 {
-    ui->channelLabel->setText(QString::number(channel));
-    ui->nameLabel->setText(channelName);
+    ui->nameLabel->setText(name);
+
+    if (isHeader) {
+        setBackgroundRole(QPalette::Window);
+        ui->spinBox->hide();
+        ui->slider->hide();
+        ui->channelLabel->hide();
+        ui->nameLabel->setAlignment(Qt::AlignLeft | Qt::AlignBottom);
+
+        QFont font;
+        font.setFamily("Helvetica");
+        font.setBold(true);
+        font.setPointSize(16);
+
+        ui->nameLabel->setFont(font);
+    } else {
+        setBackgroundRole(QPalette::Base);
+        ui->channelLabel->show();
+        ui->channelLabel->setText(QString::number(channel));
+        ui->slider->show();
+        ui->spinBox->show();
+        ui->nameLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    }
+
+    updateGeometry();
+
 }
 
 int CustomListItem::getValue() const

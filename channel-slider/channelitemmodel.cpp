@@ -6,15 +6,20 @@
 ChannelItemModel::ChannelItemModel(QObject *parent)
     : QAbstractListModel{parent}
 {
+    channels.resize(512);
+
     for (int i=0; i<512; i++) {
         ChannelUserData userData;
         userData.channel = i;
         userData.enabled = false;
-        userData.name = "test";
+        userData.name = "";
         userData.value = 0;
-
+        userData.fixtureId = -1;
+        userData.isHeader = false;
         channels[i] = userData;
     }
+
+    numFixtures = 0;
 }
 
 Qt::ItemFlags ChannelItemModel::flags(const QModelIndex &index) const
@@ -27,7 +32,7 @@ Qt::ItemFlags ChannelItemModel::flags(const QModelIndex &index) const
 
     ChannelUserData userData = qvariant_cast<ChannelUserData>(data(index, Qt::UserRole));
 
-    if (!userData.enabled) {
+    if (!userData.enabled || userData.isHeader) {
         itemFlags &= ~Qt::ItemIsEnabled;
         itemFlags &= ~Qt::ItemIsSelectable;
     }
@@ -61,7 +66,7 @@ bool ChannelItemModel::canDropMimeData(const QMimeData *mimeData, Qt::DropAction
     int endRow = parent.row() + fixtureMimeData->fixture.channels.count();
 
     for (int i=parent.row(); i<endRow; i++) {
-        if (i >= rowCount(QModelIndex()) || channels[i].enabled) {
+        if (i >= rowCount(QModelIndex()) || channels[i].enabled || channels[i].isHeader) {
             return false;
         }
     }
@@ -77,20 +82,24 @@ bool ChannelItemModel::dropMimeData(const QMimeData *mimeData, Qt::DropAction ac
     const FixtureMimeData *fixtureMimeData = qobject_cast<const FixtureMimeData *>(mimeData);
     Q_ASSERT(fixtureMimeData != nullptr);
 
+    // Add row for the header
+    beginInsertRows(parent, parent.row(), parent.row());
+    channels.insert(parent.row(), ChannelUserData(fixtureMimeData->fixture.name, numFixtures));
+    numFixtures += 1;
+    endInsertRows();
+
     for (int i=0; i<fixtureMimeData->fixture.channels.count(); i++) {
-        int row = parent.row() + i;
-        QModelIndex channelIndex = index(row);
+        int row = parent.row() + 1 + i;
         ChannelUserData userData;
         userData.enabled = true;
-        userData.channel = row+1;
+        userData.channel = channels[row].channel;
         userData.value = 0;
         userData.name = fixtureMimeData->fixture.channels[i].name;
-
-        QVariant val;
-        val.setValue(userData);
-
-        setData(channelIndex, val, Qt::UserRole);
+        userData.fixtureId = numFixtures;
+        channels[row] = userData;
     }
+
+    emit dataChanged(index(parent.row()+1), index(parent.row()+fixtureMimeData->fixture.channels.count()));
     return true;
 }
 
@@ -143,10 +152,5 @@ QVariant ChannelItemModel::data(const QModelIndex &index, int role) const
     }
 
     return ret;
-}
-
-QVariant ChannelItemModel::headerData(int row, Qt::Orientation orientation, int role) const
-{
-    return channels[row].fixtureId;
 }
 

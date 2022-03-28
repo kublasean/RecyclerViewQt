@@ -34,7 +34,7 @@ void ChannelSliderAdapter::updateViewHolder(ChannelSliderViewHolder *vh, Channel
     CustomListItem *view = qobject_cast<CustomListItem *>(vh->getItemView());
     Q_ASSERT(view != nullptr);
 
-    view->setChannel(userData.channel, userData.name);
+    view->setDisplayData(userData.channel, userData.name, userData.isHeader);
     view->setEnabled(userData.enabled);
     view->setValue(userData.value);
 }
@@ -83,7 +83,6 @@ void ChannelSliderAdapter::newUserChannelValue(int dataPos, int val)
 }
 
 // Update the slider when the model data changes
-// TODO: do all rows, not just the first
 void ChannelSliderAdapter::onDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles)
 {
     for (int i=topLeft.row(); i<=bottomRight.row(); i++) {
@@ -91,7 +90,7 @@ void ChannelSliderAdapter::onDataChanged(const QModelIndex &topLeft, const QMode
 
         ViewHolder *vh = findViewHolder(i);
         if (vh == nullptr)
-            return;
+            continue;
 
         if (roles.isEmpty() || roles.contains(Qt::UserRole)) {
             ChannelSliderViewHolder *channelVh = qobject_cast<ChannelSliderViewHolder *>(vh);
