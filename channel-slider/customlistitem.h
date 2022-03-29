@@ -23,9 +23,15 @@ public slots:
 
 signals:
     void valueChanged(int newValue);
+    void dragStarted();
+
+protected:
+    void mousePressEvent(QMouseEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *event) override;
 
 private:
     Ui::CustomListItem *ui;
+    QPoint dragPos;
 };
 
 #endif // CUSTOMLISTITEM_H

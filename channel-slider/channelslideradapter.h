@@ -28,6 +28,7 @@ private slots:
     void newUserChannelValue(int dataPos, int val);
 
     void onDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles);
+    void dragFixture();
 
 private:
     QPointer<QItemSelectionModel> selectionModel;

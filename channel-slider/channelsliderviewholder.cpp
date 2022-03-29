@@ -7,6 +7,7 @@ ChannelSliderViewHolder::ChannelSliderViewHolder(QObject *parent, CustomListItem
     Q_ASSERT(view != nullptr);
 
     connect(view, &CustomListItem::valueChanged, this, &ChannelSliderViewHolder::onNewChannelValue);
+    connect(view, &CustomListItem::dragStarted, this, &ChannelSliderViewHolder::dragStarted);
 }
 
 void ChannelSliderViewHolder::onNewChannelValue(int val)

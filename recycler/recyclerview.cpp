@@ -367,6 +367,8 @@ void RecyclerView::setSelection(const QRect &rect, QItemSelectionModel::Selectio
 {
     Q_ASSERT(selectionModel() != nullptr);
 
+    qDebug() << "SET SELECTION" << rect;
+
     QRect normRect = rect.normalized(); // we don't want negative width or height
 
     QModelIndex topLeft = indexAt(normRect.topLeft());

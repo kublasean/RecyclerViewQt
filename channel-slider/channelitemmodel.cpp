@@ -50,6 +50,36 @@ QStringList ChannelItemModel::mimeTypes() const
     return { FixtureMimeData::channelFormat() };
 }
 
+// Ownership is not taken of the QMimeData returned
+QMimeData *ChannelItemModel::mimeData(const QModelIndexList &indexes) const
+{
+    if (!indexes.first().isValid())
+        return nullptr;
+
+    int headerRow = indexes.first().row();
+    if (!channels[headerRow].isHeader)
+        return nullptr;
+
+    int fixtureId = channels[headerRow].fixtureId;
+
+    FixtureMimeData *mimeData = new FixtureMimeData();
+    mimeData->fixture.name = channels[headerRow].name;
+
+    for (int i=headerRow+1; i<channels.count(); i++) {
+        if (channels[i].fixtureId != fixtureId)
+            break;
+        mimeData->fixture.channels.push_back(FixtureChannel(channels[i].name));
+    }
+
+    if (mimeData->fixture.channels.isEmpty()) {
+        delete mimeData;
+        return nullptr;
+    }
+
+    mimeData->rows =  mimeData->fixture.channels.count();
+    return mimeData;
+}
+
 bool ChannelItemModel::canDropMimeData(const QMimeData *mimeData, Qt::DropAction action, int row, int column, const QModelIndex &parent) const
 {
     if (!checkIndex(parent, CheckIndexOption::IndexIsValid)) {
@@ -84,8 +114,7 @@ bool ChannelItemModel::dropMimeData(const QMimeData *mimeData, Qt::DropAction ac
 
     // Add row for the header
     beginInsertRows(parent, parent.row(), parent.row());
-    channels.insert(parent.row(), ChannelUserData(fixtureMimeData->fixture.name, numFixtures));
-    numFixtures += 1;
+    channels.insert(parent.row(), ChannelUserData(fixtureMimeData->fixture.name + " " + QString::number(numFixtures + 1), numFixtures));
     endInsertRows();
 
     for (int i=0; i<fixtureMimeData->fixture.channels.count(); i++) {
@@ -99,6 +128,7 @@ bool ChannelItemModel::dropMimeData(const QMimeData *mimeData, Qt::DropAction ac
         channels[row] = userData;
     }
 
+    numFixtures += 1;
     emit dataChanged(index(parent.row()+1), index(parent.row()+fixtureMimeData->fixture.channels.count()));
     return true;
 }

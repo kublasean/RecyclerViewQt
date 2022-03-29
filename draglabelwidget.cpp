@@ -15,13 +15,13 @@ DragLabelWidget::DragLabelWidget(QWidget *parent)
     setFrameShadow(QFrame::Raised);
     setFrameShape(QFrame::Panel);
 
-    fixture.name = "DJ LIGHTS";
+    fixture.name = "DJ Lights";
     fixture.channels.append(FixtureChannel("Master Dimmer"));
     fixture.channels.append(FixtureChannel("Red"));
     fixture.channels.append(FixtureChannel("Green"));
     fixture.channels.append(FixtureChannel("Blue"));
 
-    setText("DJ Lights");
+    setText(fixture.name);
 }
 
 void DragLabelWidget::mousePressEvent(QMouseEvent *event)

@@ -2,8 +2,11 @@
 #include "customlistitem.h"
 #include "channelsliderviewholder.h"
 #include "channelitemmodel.h"
+#include "fixturemimedata.h"
 
 #include <QDebug>
+#include <QWindow>
+#include <QDrag>
 
 ChannelSliderAdapter::ChannelSliderAdapter(QAbstractItemModel *model, QObject *parent)
     : RecyclerViewAdapter(model, parent)
@@ -48,6 +51,7 @@ void ChannelSliderAdapter::onBindViewHolder(ViewHolder *vh, int dataPos)
     updateViewHolder(channelViewHolder, userData);
 
     connect(channelViewHolder, &ChannelSliderViewHolder::valueChanged, this, &ChannelSliderAdapter::newUserChannelValue);
+    connect(channelViewHolder, &ChannelSliderViewHolder::dragStarted, this, &ChannelSliderAdapter::dragFixture);
 }
 
 // When the user interacts with the slider update the model data
@@ -104,6 +108,30 @@ void ChannelSliderAdapter::onDataChanged(const QModelIndex &topLeft, const QMode
         }
     }
 }
+
+void ChannelSliderAdapter::dragFixture()
+{
+    ChannelSliderViewHolder *vh = qobject_cast<ChannelSliderViewHolder *>(QObject::sender());
+    if (vh == nullptr) {
+        return;
+    }
+
+    QMimeData *data = dataModel->mimeData({ dataModel->index(vh->dataPos, 0) });
+    if (data == nullptr) {
+        return;
+    }
+
+    qreal dpr = vh->getItemView()->window()->windowHandle()->devicePixelRatio();
+    QPixmap pixmap(vh->getItemView()->size() * dpr);
+    pixmap.setDevicePixelRatio(dpr);
+    vh->getItemView()->render(&pixmap);
+
+    QDrag *drag = new QDrag(vh->getItemView());
+    drag->setMimeData(data);
+    drag->setPixmap(pixmap);
+    drag->exec(Qt::CopyAction);
+}
+
 
 void ChannelSliderAdapter::setSelectionModel(QItemSelectionModel *model)
 {
