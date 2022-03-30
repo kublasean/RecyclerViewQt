@@ -26,7 +26,10 @@ CustomListItem::~CustomListItem()
 
 void CustomListItem::setValue(int value)
 {
+    blockSignals(true);
     ui->slider->setValue(value);
+    ui->spinBox->setValue(value);
+    blockSignals(false);
 }
 
 void CustomListItem::setDisplayData(int channel, const QString &name, bool isHeader)

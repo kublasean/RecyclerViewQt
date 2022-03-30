@@ -6,15 +6,10 @@
 #include <QDragMoveEvent>
 #include <QPainter>
 
-RecyclerView::RecyclerView(RecyclerViewAdapter *adapter, int itemHeight, QWidget *parent) :
+RecyclerView::RecyclerView(int itemHeight, QWidget *parent) :
     QAbstractItemView(parent)
 {
-    Q_ASSERT(adapter != nullptr);
-
-    this->adapter = adapter;
-    this->adapter->setParent(this);
-    setModel(this->adapter->model());
-
+    adapter = nullptr;
     if (itemHeight <= 50) {
         itemHeight = 50;
     }
@@ -33,11 +28,39 @@ RecyclerView::RecyclerView(RecyclerViewAdapter *adapter, int itemHeight, QWidget
     pool.maxSize = viewport()->height() / itemHeight + numExtraActive;
 
     viewport()->setAutoFillBackground(true);
-    viewport()->setBackgroundRole(QPalette::Window);
+    viewport()->setBackgroundRole(QPalette::Window);    
+}
+
+void RecyclerView::setAdapter(RecyclerViewAdapter *adapter)
+{
+    Q_ASSERT(adapter != nullptr);
+
+    if (this->adapter != nullptr) {
+        this->adapter->deleteLater();
+    }
+
+    this->adapter = adapter;
+    adapter->setParent(this);
+    QAbstractItemView::setModel(this->adapter->model());
+    connect(model(), &QAbstractItemModel::rowsRemoved, this, &RecyclerView::rowsRemoved);
+
+    resetActiveViews();
+    // Adjust our minWidth to that of an item if this is the first item we have created
+    if (!adapter->activeViewMap.isEmpty()) {
+        QWidget *widget = adapter->activeViewMap.first()->getItemView();
+        if (widget->minimumSizeHint().isValid()) {
+            setMinimumWidth(widget->minimumSizeHint().width() + itemMargin*2 + sectionMargin + verticalScrollBar()->sizeHint().width());
+        } else {
+            setMinimumWidth(widget->minimumWidth() + itemMargin*2 + sectionMargin + verticalScrollBar()->sizeHint().width());
+        }
+    }
 }
 
 QModelIndex RecyclerView::indexAt(const QPoint &point) const
 {
+    if (model() == nullptr)
+        return QModelIndex();
+
     int row = (point.y() - viewport()->rect().top() + verticalScrollBar()->value() - itemMargin) / (itemHeight + itemMargin);
 
     if (!model()->hasIndex(row, 0))
@@ -48,6 +71,9 @@ QModelIndex RecyclerView::indexAt(const QPoint &point) const
 
 void RecyclerView::scrollTo(const QModelIndex &index, QAbstractItemView::ScrollHint hint)
 {
+    if (!index.isValid())
+        return;
+
     int yPos;
 
     switch (hint) {
@@ -75,12 +101,15 @@ void RecyclerView::scrollTo(const QModelIndex &index, QAbstractItemView::ScrollH
 // The rectangle of just the item, no margins
 QRect RecyclerView::visualRect(const QModelIndex &index) const
 {
+    Q_ASSERT(index.isValid());
     return QRect(sectionMargin, getItemPos(index.row()), viewport()->width() - sectionMargin, itemHeight);
 }
 
 // Includes margins around the items
 QRect RecyclerView::sectionRect(int startRow, int endRow) const
 {
+    Q_ASSERT(endRow >= startRow);
+
     int numRows = (endRow - startRow + 1);
     int sectionHeight = numRows*itemHeight + (numRows + 1)*itemMargin;
 
@@ -90,6 +119,9 @@ QRect RecyclerView::sectionRect(int startRow, int endRow) const
 // Height of all items and margins
 int RecyclerView::totalItemHeight() const
 {
+    if (model() == nullptr)
+        return 0;
+
     return model()->rowCount() * itemHeight + (model()->rowCount()+1) * itemMargin;
 }
 
@@ -102,6 +134,9 @@ int RecyclerView::getItemPos(int dataPos) const
 // dataPos is the row, y should be the display position of row
 void RecyclerView::populateItem(int dataPos, int y)
 {
+    if (model() == nullptr)
+        return;
+
     QModelIndex index = model()->index(dataPos, 0);
     Q_ASSERT(model()->checkIndex(index, QAbstractItemModel::CheckIndexOption::IndexIsValid));
 
@@ -132,6 +167,9 @@ void RecyclerView::populateItem(int dataPos, int y)
 // TODO: refactor the following into one function that works both ways
 void RecyclerView::populateItemsBelow(int startDataPos)
 {
+    if (model() == nullptr)
+        return;
+
     int bottom = viewport()->rect().bottom();
 
     if (getItemPos(startDataPos) > bottom || startDataPos < 0)
@@ -151,6 +189,9 @@ void RecyclerView::populateItemsBelow(int startDataPos)
 }
 void RecyclerView::populateItemsAbove(int startDataPos)
 {
+    if (model() == nullptr)
+        return;
+
     int top = viewport()->rect().top();
     if (getItemPos(startDataPos) + itemHeight < top || startDataPos < 0)
         return;
@@ -177,6 +218,9 @@ void RecyclerView::resizeEvent(QResizeEvent *event)
     verticalScrollBar()->setRange(0, totalItemHeight() - viewport()->height());
     pool.maxSize = viewport()->height() / itemHeight + numExtraActive;
 
+    if (adapter == nullptr)
+        return;
+
     for (auto it=adapter->activeViewMap.begin(); it!=adapter->activeViewMap.end(); it++) {
         it.value()->getItemView()->resize(viewport()->width() - itemMargin*2 - sectionMargin, itemHeight);
     }
@@ -184,17 +228,6 @@ void RecyclerView::resizeEvent(QResizeEvent *event)
     if (adapter->activeViewMap.isEmpty()) {
         int startDataPos = indexAt(QPoint(0,0)).row();
         populateItemsBelow(startDataPos);
-
-        // Adjust our minWidth to that of an item if this is the first item we have created
-        if (!adapter->activeViewMap.isEmpty()) {
-            QWidget *widget = adapter->activeViewMap.first()->getItemView();
-            if (widget->minimumSizeHint().isValid()) {
-                setMinimumWidth(widget->minimumSizeHint().width() + itemMargin*2 + sectionMargin + verticalScrollBar()->sizeHint().width());
-            } else {
-                setMinimumWidth(widget->minimumWidth() + itemMargin*2 + sectionMargin + verticalScrollBar()->sizeHint().width());
-            }
-        }
-
     }
     else if (adapter->activeViewMap.last()->getItemView()->rect().bottom() < viewport()->rect().bottom()) {
         populateItemsBelow(adapter->activeViewMap.lastKey() + 1);
@@ -205,6 +238,8 @@ void RecyclerView::dragMoveEvent(QDragMoveEvent *event)
 {
     QAbstractItemView::dragMoveEvent(event);
 
+    if (model() == nullptr)
+        return;
 
     // Can drop here, parent class will trigger repaint
     if (event->isAccepted()) {
@@ -226,6 +261,9 @@ void RecyclerView::dragMoveEvent(QDragMoveEvent *event)
 
 void RecyclerView::mousePressEvent(QMouseEvent *event)
 {
+    if (model() == nullptr)
+        return;
+
     QModelIndex item = indexAt(event->pos());
     if (!item.isValid() || !item.flags().testFlag(Qt::ItemIsEnabled) || !item.flags().testFlag(Qt::ItemIsSelectable)) {
         selectionModel()->clear();
@@ -235,6 +273,9 @@ void RecyclerView::mousePressEvent(QMouseEvent *event)
 
 void RecyclerView::keyPressEvent(QKeyEvent *event)
 {
+    if (model() == nullptr)
+        return;
+
     if (!event->matches(QKeySequence::SelectAll)) {
         QAbstractItemView::keyPressEvent(event);
         return;
@@ -290,9 +331,11 @@ void RecyclerView::paintEvent(QPaintEvent *event)
     painter.setPen(pen);
 
     // Selection border painting
-    const QItemSelection selection = selectionModel()->selection();
-    for (auto it=selection.begin(); it!=selection.end(); it++) {
-        painter.drawRect(marginHelper(sectionRect(it->top(), it->bottom())));
+    if (selectionModel() != nullptr) {
+        const QItemSelection selection = selectionModel()->selection();
+        for (auto it=selection.begin(); it!=selection.end(); it++) {
+            painter.drawRect(marginHelper(sectionRect(it->top(), it->bottom())));
+        }
     }
 
     // Drop-zone border painting
@@ -310,17 +353,23 @@ void RecyclerView::paintEvent(QPaintEvent *event)
 
 void RecyclerView::resetActiveViews()
 {
+    if (adapter == nullptr)
+        return;
+
     // Recycle everything
     for (auto it=adapter->activeViewMap.begin(); it!=adapter->activeViewMap.end(); it++)
-        pool.putRecycledView(it.value());
+        pool.putRecycledView(adapter->recycleViewHolder(it.value()));
     adapter->activeViewMap.clear();
 
-    int startDataPos = (verticalScrollBar()->value() - itemMargin) / (itemHeight + itemMargin);
-    populateItemsBelow(startDataPos);
+    //int startDataPos = (verticalScrollBar()->value() - itemMargin) / (itemHeight + itemMargin);
+    populateItemsBelow(indexAt(QPoint(0, 0)).row());
 }
 
 void RecyclerView::scrollContentsBy(int dx, int dy)
 {
+    if (adapter == nullptr)
+        return;
+
     // Special case for when we "jump" positions in the scrollbar
     if (qAbs(dy) > (adapter->activeViewMap.size() * itemHeight + (adapter->activeViewMap.size()+1)*itemMargin)) {
         resetActiveViews();
@@ -365,7 +414,7 @@ QModelIndex RecyclerView::moveCursor(QAbstractItemView::CursorAction cursorActio
 
 void RecyclerView::setSelection(const QRect &rect, QItemSelectionModel::SelectionFlags flags)
 {
-    Q_ASSERT(selectionModel() != nullptr);
+    Q_ASSERT(selectionModel() != nullptr && model() != nullptr);
 
     qDebug() << "SET SELECTION" << rect;
 
@@ -432,5 +481,12 @@ void RecyclerView::rowsInserted(const QModelIndex &parent, int start, int end)
     verticalScrollBar()->setRange(0, totalItemHeight() - viewport()->height());
     resetActiveViews();
 }
+
+void RecyclerView::rowsRemoved(const QModelIndex &parent, int start, int end)
+{
+    verticalScrollBar()->setRange(0, totalItemHeight() - viewport()->height());
+    resetActiveViews();
+}
+
 
 

@@ -28,6 +28,8 @@ public:
 
     Fixture fixture;
     QPoint hotspot;
+    int fixtureId;
+    int sourceDataPos;
 
     static QString channelFormat() { return "application/channel-slider-data"; }
 };

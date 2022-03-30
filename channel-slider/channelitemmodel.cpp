@@ -42,7 +42,7 @@ Qt::ItemFlags ChannelItemModel::flags(const QModelIndex &index) const
 
 Qt::DropActions ChannelItemModel::supportedDropActions() const
 {
-    return Qt::DropAction::CopyAction;
+    return Qt::DropAction::CopyAction | Qt::DropAction::MoveAction;
 }
 
 QStringList ChannelItemModel::mimeTypes() const
@@ -64,6 +64,8 @@ QMimeData *ChannelItemModel::mimeData(const QModelIndexList &indexes) const
 
     FixtureMimeData *mimeData = new FixtureMimeData();
     mimeData->fixture.name = channels[headerRow].name;
+    mimeData->fixtureId = fixtureId;
+    mimeData->sourceDataPos = headerRow;
 
     for (int i=headerRow+1; i<channels.count(); i++) {
         if (channels[i].fixtureId != fixtureId)
@@ -86,19 +88,20 @@ bool ChannelItemModel::canDropMimeData(const QMimeData *mimeData, Qt::DropAction
         return false;
     }
 
-    if (action != Qt::DropAction::CopyAction)
+    if (action != Qt::DropAction::CopyAction && action != Qt::MoveAction)
         return false;
 
     const FixtureMimeData *fixtureMimeData = qobject_cast<const FixtureMimeData *>(mimeData);
     if (fixtureMimeData == nullptr)
         return false;
 
-    int endRow = parent.row() + fixtureMimeData->fixture.channels.count();
-
-    for (int i=parent.row(); i<endRow; i++) {
-        if (i >= rowCount(QModelIndex()) || channels[i].enabled || channels[i].isHeader) {
+    for (int i=0; i<fixtureMimeData->fixture.channels.count(); i++) {
+        int row = i + parent.row();
+        if (row >= rowCount(QModelIndex()))
             return false;
-        }
+
+        if (channels[row].enabled || channels[row].isHeader)
+            return false;
     }
 
     return true;
@@ -112,9 +115,32 @@ bool ChannelItemModel::dropMimeData(const QMimeData *mimeData, Qt::DropAction ac
     const FixtureMimeData *fixtureMimeData = qobject_cast<const FixtureMimeData *>(mimeData);
     Q_ASSERT(fixtureMimeData != nullptr);
 
+    QString headerName = fixtureMimeData->fixture.name + " " + QString::number(numFixtures + 1);
+    int fixtureId = numFixtures;
+
+    // Remove where the fixture was
+    /*if (action == Qt::MoveAction && fixtureMimeData->sourceDataPos != -1) {
+        headerName = fixtureMimeData->fixture.name;
+        fixtureId = fixtureMimeData->fixtureId;
+
+        beginRemoveRows(index(fixtureMimeData->sourceDataPos), fixtureMimeData->sourceDataPos, fixtureMimeData->sourceDataPos);
+        channels.remove(fixtureMimeData->sourceDataPos);
+        endRemoveRows();
+
+        for (int i=0; i<fixtureMimeData->fixture.channels.count(); i++) {
+            int row = fixtureMimeData->sourceDataPos + 1 + i;
+            channels[row].enabled = false;
+            channels[row].value = 0;
+            channels[row].name = "";
+            channels[row].fixtureId = -1;
+        }
+
+        emit dataChanged(index(fixtureMimeData->sourceDataPos), index(fixtureMimeData->sourceDataPos -1 + fixtureMimeData->fixture.channels.count()));
+    }*/
+
     // Add row for the header
     beginInsertRows(parent, parent.row(), parent.row());
-    channels.insert(parent.row(), ChannelUserData(fixtureMimeData->fixture.name + " " + QString::number(numFixtures + 1), numFixtures));
+    channels.insert(parent.row(), ChannelUserData(headerName, fixtureId));
     endInsertRows();
 
     for (int i=0; i<fixtureMimeData->fixture.channels.count(); i++) {
@@ -124,12 +150,36 @@ bool ChannelItemModel::dropMimeData(const QMimeData *mimeData, Qt::DropAction ac
         userData.channel = channels[row].channel;
         userData.value = 0;
         userData.name = fixtureMimeData->fixture.channels[i].name;
-        userData.fixtureId = numFixtures;
+        userData.fixtureId = fixtureId;
         channels[row] = userData;
     }
 
     numFixtures += 1;
     emit dataChanged(index(parent.row()+1), index(parent.row()+fixtureMimeData->fixture.channels.count()));
+    return true;
+}
+
+bool ChannelItemModel::removeFixture(int startDataPos)
+{
+    if (!channels[startDataPos].isHeader)
+        return false;
+
+    int fixtureId = channels[startDataPos].fixtureId;
+
+    beginRemoveRows(index(startDataPos), startDataPos, startDataPos);
+    channels.remove(startDataPos);
+    endRemoveRows();
+
+    int i;
+    for (i = startDataPos; i < channels.count() && channels[i].fixtureId == fixtureId; i++) {
+        channels[i].enabled = false;
+        channels[i].value = 0;
+        channels[i].name = "";
+        channels[i].fixtureId = -1;
+        channels[i].isHeader = false;
+    }
+
+    emit dataChanged(index(startDataPos), index(i-1));
     return true;
 }
 

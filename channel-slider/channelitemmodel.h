@@ -54,6 +54,8 @@ public:
 
     Qt::ItemFlags flags(const QModelIndex &index) const override;
 
+    bool removeFixture(int startDataPos);
+
 
 private:
     QVector<ChannelUserData> channels;

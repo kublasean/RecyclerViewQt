@@ -11,11 +11,15 @@
 class RecyclerView : public QAbstractItemView
 {
 public:
-    explicit RecyclerView(RecyclerViewAdapter *adapter, int itemHeight, QWidget *parent = nullptr);
+    explicit RecyclerView(int itemHeight, QWidget *parent = nullptr);
 
     QModelIndex indexAt(const QPoint &point) const override;
     void scrollTo(const QModelIndex &index, QAbstractItemView::ScrollHint hint = EnsureVisible) override;
     QRect visualRect(const QModelIndex &index) const override;
+
+    void setModel(QAbstractItemModel *) override {}
+
+    void setAdapter(RecyclerViewAdapter *adapter);
 
 protected:
     void resizeEvent(QResizeEvent *event) override;
@@ -38,6 +42,7 @@ protected slots:
     void selectionChanged(const QItemSelection &selected, const QItemSelection &deselected) override;
     void dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles = QVector<int>()) override;
     void rowsInserted(const QModelIndex &parent, int start, int end) override;
+    void rowsRemoved(const QModelIndex &parent, int start, int end);
 
 private:
     QRect marginHelper(const QRect &rect) const;

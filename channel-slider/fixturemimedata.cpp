@@ -2,7 +2,8 @@
 
 FixtureMimeData::FixtureMimeData()
 {
-
+    fixtureId = -1;
+    sourceDataPos = -1;
 }
 
 bool FixtureMimeData::hasFormat(const QString &format) const

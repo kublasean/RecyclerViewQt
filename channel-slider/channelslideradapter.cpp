@@ -71,17 +71,6 @@ void ChannelSliderAdapter::newUserChannelValue(int dataPos, int val)
         if (it->row() == dataPos) {
             continue;
         }
-
-        // Update view if visible
-        ViewHolder *vh = findViewHolder(it->row());
-        if (vh != nullptr) {
-            CustomListItem *view = qobject_cast<CustomListItem *>(vh->getItemView());
-            Q_ASSERT(view != nullptr);
-            view->blockSignals(true);
-            view->setValue(val);
-            view->blockSignals(false);
-        }
-
         dataModel->setData(dataModel->index(it->row(), 0), val, Qt::EditRole);
     }
 }
@@ -128,10 +117,14 @@ void ChannelSliderAdapter::dragFixture()
 
     QDrag *drag = new QDrag(vh->getItemView());
     drag->setMimeData(data);
-    drag->setPixmap(pixmap);
-    drag->exec(Qt::CopyAction);
-}
+    //drag->setPixmap(pixmap);
 
+    ChannelItemModel *model = qobject_cast<ChannelItemModel *>(dataModel);
+    Q_ASSERT(model != nullptr);
+    model->removeFixture(vh->dataPos);
+
+    drag->exec(Qt::MoveAction);
+}
 
 void ChannelSliderAdapter::setSelectionModel(QItemSelectionModel *model)
 {
