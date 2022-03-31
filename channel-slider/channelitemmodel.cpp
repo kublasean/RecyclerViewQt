@@ -109,6 +109,8 @@ bool ChannelItemModel::canDropMimeData(const QMimeData *mimeData, Qt::DropAction
 
 bool ChannelItemModel::dropMimeData(const QMimeData *mimeData, Qt::DropAction action, int row, int column, const QModelIndex &parent)
 {
+    qDebug() << "DROP AT" << parent.row() << row << column;
+
     if (!canDropMimeData(mimeData, action, row, column, parent))
         return false;
 
@@ -118,30 +120,9 @@ bool ChannelItemModel::dropMimeData(const QMimeData *mimeData, Qt::DropAction ac
     QString headerName = fixtureMimeData->fixture.name + " " + QString::number(numFixtures + 1);
     int fixtureId = numFixtures;
 
-    // Remove where the fixture was
-    /*if (action == Qt::MoveAction && fixtureMimeData->sourceDataPos != -1) {
-        headerName = fixtureMimeData->fixture.name;
-        fixtureId = fixtureMimeData->fixtureId;
-
-        beginRemoveRows(index(fixtureMimeData->sourceDataPos), fixtureMimeData->sourceDataPos, fixtureMimeData->sourceDataPos);
-        channels.remove(fixtureMimeData->sourceDataPos);
-        endRemoveRows();
-
-        for (int i=0; i<fixtureMimeData->fixture.channels.count(); i++) {
-            int row = fixtureMimeData->sourceDataPos + 1 + i;
-            channels[row].enabled = false;
-            channels[row].value = 0;
-            channels[row].name = "";
-            channels[row].fixtureId = -1;
-        }
-
-        emit dataChanged(index(fixtureMimeData->sourceDataPos), index(fixtureMimeData->sourceDataPos -1 + fixtureMimeData->fixture.channels.count()));
-    }*/
-
     // Add row for the header
     beginInsertRows(parent, parent.row(), parent.row());
     channels.insert(parent.row(), ChannelUserData(headerName, fixtureId));
-    endInsertRows();
 
     for (int i=0; i<fixtureMimeData->fixture.channels.count(); i++) {
         int row = parent.row() + 1 + i;
@@ -155,7 +136,8 @@ bool ChannelItemModel::dropMimeData(const QMimeData *mimeData, Qt::DropAction ac
     }
 
     numFixtures += 1;
-    emit dataChanged(index(parent.row()+1), index(parent.row()+fixtureMimeData->fixture.channels.count()));
+    endInsertRows();
+    //emit dataChanged(index(parent.row()+1), index(parent.row()+fixtureMimeData->fixture.channels.count()));
     return true;
 }
 
@@ -168,7 +150,6 @@ bool ChannelItemModel::removeFixture(int startDataPos)
 
     beginRemoveRows(index(startDataPos), startDataPos, startDataPos);
     channels.remove(startDataPos);
-    endRemoveRows();
 
     int i;
     for (i = startDataPos; i < channels.count() && channels[i].fixtureId == fixtureId; i++) {
@@ -179,7 +160,8 @@ bool ChannelItemModel::removeFixture(int startDataPos)
         channels[i].isHeader = false;
     }
 
-    emit dataChanged(index(startDataPos), index(i-1));
+    endRemoveRows();
+    //emit dataChanged(index(startDataPos), index(i-1));
     return true;
 }
 

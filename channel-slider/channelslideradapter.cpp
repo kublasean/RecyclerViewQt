@@ -25,8 +25,9 @@ void ChannelSliderAdapter::onRecycleViewHolder(ViewHolder *vh) const
     ChannelSliderViewHolder *customViewHolder = qobject_cast<ChannelSliderViewHolder *>(vh);
     Q_ASSERT(customViewHolder != nullptr);
 
-    // Disconnect everything from valueChanged signal
+    // Disconnect everything from signals
     disconnect(customViewHolder, &ChannelSliderViewHolder::valueChanged, nullptr, nullptr);
+    disconnect(customViewHolder, &ChannelSliderViewHolder::dragStarted, nullptr, nullptr);
 }
 
 void ChannelSliderAdapter::updateViewHolder(ChannelSliderViewHolder *vh, ChannelUserData userData)
@@ -99,7 +100,7 @@ void ChannelSliderAdapter::onDataChanged(const QModelIndex &topLeft, const QMode
 }
 
 void ChannelSliderAdapter::dragFixture()
-{
+{       
     ChannelSliderViewHolder *vh = qobject_cast<ChannelSliderViewHolder *>(QObject::sender());
     if (vh == nullptr) {
         return;
@@ -114,6 +115,8 @@ void ChannelSliderAdapter::dragFixture()
     QPixmap pixmap(vh->getItemView()->size() * dpr);
     pixmap.setDevicePixelRatio(dpr);
     vh->getItemView()->render(&pixmap);
+
+    qDebug() << "DRAG STARTED" << vh->dataPos;
 
     QDrag *drag = new QDrag(vh->getItemView());
     drag->setMimeData(data);

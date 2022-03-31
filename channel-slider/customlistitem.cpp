@@ -57,7 +57,6 @@ void CustomListItem::mousePressEvent(QMouseEvent *event)
     qDebug() << "CustomListItem mouse press event";
     if (event->button() == Qt::LeftButton && ui->stackedWidget->currentWidget() == ui->headerPage) {
         dragPos = event->pos();
-        event->accept();
         return;
     }
 
@@ -66,7 +65,6 @@ void CustomListItem::mousePressEvent(QMouseEvent *event)
 
 void CustomListItem::mouseMoveEvent(QMouseEvent *event)
 {
-
     // Are we sure it's ok to compare pointers (eek)?
     // Only want to be able to drag from a header row
     if (ui->stackedWidget->currentWidget() != ui->headerPage) {
@@ -74,21 +72,19 @@ void CustomListItem::mouseMoveEvent(QMouseEvent *event)
         return;
     }
 
+    qDebug() << "CUSTOM LIST ITEM MOUSE MOVE";
+
     if (dragPos.isNull() || !(event->buttons() & Qt::LeftButton)) {
-        QWidget::mouseMoveEvent(event);
         return;
     }
-
     if ((event->pos() - dragPos).manhattanLength() < QApplication::startDragDistance()) {
-        QWidget::mouseMoveEvent(event);
         return;
     }
 
-    event->accept();
-    emit dragStarted();
-    //QWidget::mouseMoveEvent(event);
-
-    // Reset to null
     dragPos = QPoint();
+
+    qDebug() << "CUSTOM LIST ITEM SIGNAL EMIT";
+
+    emit dragStarted();
 }
 
